@@ -53,6 +53,39 @@ const SYSTEM_PROMPT = `أنت كاتب محتوى عربي محترف ومتخص
 ٣. اكتب بعربية عصرية مفهومة
 ٤. كل منشور ينتهي بـ call-to-action أو سؤال`;
 
+// ─── إعدادات API من متغيرات البيئة ────────────────────────────────────────
+const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;
+const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://ai.gateway.lovable.dev/v1';
+const AI_MODEL = import.meta.env.VITE_AI_MODEL || 'google/gemini-3-flash-preview';
+
+async function callAI(prompt) {
+  if (!AI_API_KEY) {
+    throw new Error('مفتاح AI غير مضبوط. أضف VITE_AI_API_KEY في ملف .env');
+  }
+
+  const res = await fetch(`${AI_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${AI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    if (res.status === 429) throw new Error('تم تجاوز حد الطلبات. حاول لاحقاً.');
+    if (res.status === 402) throw new Error('انتهت الرصيد. يرجى إضافة رصيد للحساب.');
+    throw new Error(`فشل الاتصال بـ AI (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || '';
+}
+
 export async function generateContent({ platforms, tone, postType, userInput }) {
   const toneName = TONE_MAP[tone] || tone;
   const typeName = TYPE_MAP[postType] || postType;
@@ -73,16 +106,18 @@ ${platformGuide}
 
 اكتب المنشور مباشرة بلا عنوان ولا مقدمة.`;
 
-    // ── TODO: استبدل هذا بـ API call حقيقي ─────────────────────────────
-    // مثال: const text = await callOpenAI(prompt);
-    // ────────────────────────────────────────────────────────────────────
-    const text = `[TODO: اربط هنا بـ API الخاص بك]\n\nالمنصة: ${platformName}\nالفكرة: ${userInput}`;
-    return [platform, text];
+    try {
+      const text = await callAI(prompt);
+      return [platform, text];
+    } catch (err) {
+      return [platform, `⚠️ ${err.message}`];
+    }
   };
 
   const entries = await Promise.all(platforms.map(generateForPlatform));
   return Object.fromEntries(entries);
 }
+
 
 // ── Free tier (localStorage) ──────────────────────────────────────────────
 const MAX_FREE_DAILY = 3;
