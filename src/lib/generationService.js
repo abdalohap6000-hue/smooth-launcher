@@ -1,16 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// generationService.js — standalone version
-//
-// REPLACE the generateForPlatform function body with your own LLM API call.
-// Example using OpenAI:
-//
-//   const response = await fetch('https://api.openai.com/v1/chat/completions', {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${YOUR_KEY}` },
-//     body: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }] }),
-//   });
-//   const data = await response.json();
-//   return data.choices[0].message.content;
+// generationService.js — يستدعي وسيط الخادم (Supabase Edge Function)
+// بدلاً من الاتصال المباشر بمزود AI، لتجنب كشف مفتاح API في المتصفح.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TONE_MAP = {
@@ -53,37 +43,33 @@ const SYSTEM_PROMPT = `أنت كاتب محتوى عربي محترف ومتخص
 ٣. اكتب بعربية عصرية مفهومة
 ٤. كل منشور ينتهي بـ call-to-action أو سؤال`;
 
-// ─── إعدادات API من متغيرات البيئة ────────────────────────────────────────
-const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;
-const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || 'https://ai.gateway.lovable.dev/v1';
-const AI_MODEL = import.meta.env.VITE_AI_MODEL || 'google/gemini-3-flash-preview';
+// ─── إعدادات الوسيط الخادم ────────────────────────────────────────────────
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const EDGE_URL = `${SUPABASE_URL}/functions/v1/generate-content`;
 
-async function callAI(prompt) {
-  if (!AI_API_KEY) {
-    throw new Error('مفتاح AI غير مضبوط. أضف VITE_AI_API_KEY في ملف .env');
+async function callAI({ system, prompt }) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('إعدادات Supabase غير مضبوطة.');
   }
 
-  const res = await fetch(`${AI_BASE_URL}/chat/completions`, {
+  const res = await fetch(EDGE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${AI_API_KEY}`,
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+    body: JSON.stringify({ system, prompt }),
   });
 
+  const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    if (res.status === 429) throw new Error('تم تجاوز حد الطلبات. حاول لاحقاً.');
-    if (res.status === 402) throw new Error('انتهت الرصيد. يرجى إضافة رصيد للحساب.');
-    throw new Error(`فشل الاتصال بـ AI (${res.status}): ${errText}`);
+    throw new Error(data?.error || `فشل الاتصال (${res.status})`);
   }
 
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || '';
+  return (data?.text || '').trim();
 }
 
 export async function generateContent({ platforms, tone, postType, userInput }) {
@@ -94,9 +80,7 @@ export async function generateContent({ platforms, tone, postType, userInput }) 
     const platformName = PLATFORM_MAP[platform] || platform;
     const platformGuide = PLATFORM_GUIDELINES[platform] || '';
 
-    const prompt = `${SYSTEM_PROMPT}
-
-المنصة: ${platformName}
+    const prompt = `المنصة: ${platformName}
 الأسلوب: ${toneName}
 نوع المنشور: ${typeName}
 الفكرة: ${userInput}
@@ -107,7 +91,7 @@ ${platformGuide}
 اكتب المنشور مباشرة بلا عنوان ولا مقدمة.`;
 
     try {
-      const text = await callAI(prompt);
+      const text = await callAI({ system: SYSTEM_PROMPT, prompt });
       return [platform, text];
     } catch (err) {
       return [platform, `⚠️ ${err.message}`];
