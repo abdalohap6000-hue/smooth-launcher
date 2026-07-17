@@ -7,4 +7,10 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
+  server: {
+    host: '::',
+    port: 8080,
+    strictPort: true,
+    allowedHosts: true,
+  },
 });
