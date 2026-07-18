@@ -46,11 +46,30 @@ const SYSTEM_PROMPT = `أنت كاتب محتوى عربي محترف ومتخص
 // ─── إعدادات الوسيط الخادم ────────────────────────────────────────────────
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const EDGE_URL = `${SUPABASE_URL}/functions/v1/generate-content`;
+const DEFAULT_MODEL = import.meta.env.VITE_AI_MODEL || 'google/gemini-3-flash-preview';
+const EDGE_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/generate-content` : '';
+
+export const AVAILABLE_MODELS = [
+  { id: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash (الافتراضي)' },
+  { id: 'google/gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+  { id: 'google/gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite' },
+  { id: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
+  { id: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite' },
+];
+
+export function getSelectedModel() {
+  return localStorage.getItem('qalami_ai_model') || DEFAULT_MODEL;
+}
+
+export function setSelectedModel(id) {
+  localStorage.setItem('qalami_ai_model', id);
+}
 
 async function callAI({ system, prompt }) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('إعدادات Supabase غير مضبوطة.');
+    throw new Error('إعدادات Supabase ناقصة (VITE_SUPABASE_URL أو VITE_SUPABASE_PUBLISHABLE_KEY).');
   }
 
   const res = await fetch(EDGE_URL, {
@@ -60,15 +79,11 @@ async function callAI({ system, prompt }) {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({ system, prompt }),
+    body: JSON.stringify({ system, prompt, model: getSelectedModel() }),
   });
 
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data?.error || `فشل الاتصال (${res.status})`);
-  }
-
+  if (!res.ok) throw new Error(data?.error || `فشل الاتصال (${res.status})`);
   return (data?.text || '').trim();
 }
 
@@ -103,23 +118,10 @@ ${platformGuide}
 }
 
 
-// ── Free tier (localStorage) ──────────────────────────────────────────────
-const MAX_FREE_DAILY = 3;
-
+// ── الاستخدام المجاني بدون اشتراك (غير محدود) ─────────────────────────────
+// تمّت إزالة السقف اليومي — يمكن للمستخدم التوليد بدون اشتراك Pro.
 export function getFreeTierStatus() {
-  const today = new Date().toDateString();
-  const lastDate = localStorage.getItem('qalami_last_gen_date');
-  let count = parseInt(localStorage.getItem('qalami_daily_count') || '0');
-  if (lastDate !== today) {
-    count = 0;
-    localStorage.setItem('qalami_last_gen_date', today);
-    localStorage.setItem('qalami_daily_count', '0');
-  }
-  return {
-    remaining: Math.max(0, MAX_FREE_DAILY - count),
-    used: count, max: MAX_FREE_DAILY,
-    canGenerate: count < MAX_FREE_DAILY,
-  };
+  return { remaining: Infinity, used: 0, max: Infinity, canGenerate: true };
 }
 
 export function incrementUsage() {
