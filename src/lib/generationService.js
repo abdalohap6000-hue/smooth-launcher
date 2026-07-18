@@ -118,23 +118,10 @@ ${platformGuide}
 }
 
 
-// ── Free tier (localStorage) ──────────────────────────────────────────────
-const MAX_FREE_DAILY = 3;
-
+// ── الاستخدام المجاني بدون اشتراك (غير محدود) ─────────────────────────────
+// تمّت إزالة السقف اليومي — يمكن للمستخدم التوليد بدون اشتراك Pro.
 export function getFreeTierStatus() {
-  const today = new Date().toDateString();
-  const lastDate = localStorage.getItem('qalami_last_gen_date');
-  let count = parseInt(localStorage.getItem('qalami_daily_count') || '0');
-  if (lastDate !== today) {
-    count = 0;
-    localStorage.setItem('qalami_last_gen_date', today);
-    localStorage.setItem('qalami_daily_count', '0');
-  }
-  return {
-    remaining: Math.max(0, MAX_FREE_DAILY - count),
-    used: count, max: MAX_FREE_DAILY,
-    canGenerate: count < MAX_FREE_DAILY,
-  };
+  return { remaining: Infinity, used: 0, max: Infinity, canGenerate: true };
 }
 
 export function incrementUsage() {
