@@ -13,6 +13,20 @@ const TYPE_MAP = {
   special_offer: 'عرض خاص', personal_story: 'قصة شخصية', interactive_q: 'سؤال تفاعلي',
 };
 
+const LENGTH_MAP = {
+  short:  { label: 'قصير',  words: 'حوالي ٤٠-٦٠ كلمة' },
+  medium: { label: 'متوسط', words: 'حوالي ١٢٠-١٧٠ كلمة' },
+  long:   { label: 'طويل',  words: 'حوالي ٢٥٠-٣٥٠ كلمة' },
+};
+
+const LANGUAGE_MAP = {
+  ar:      'العربية الفصحى المعاصرة',
+  ar_eg:   'اللهجة المصرية العامية',
+  ar_gulf: 'اللهجة الخليجية',
+  en:      'English (natural, native-level)',
+  fr:      'Français (naturel, natif)',
+};
+
 const PLATFORM_MAP = {
   instagram: 'إنستغرام', tiktok: 'تيك توك', twitter: 'تويتر / X',
   youtube: 'يوتيوب', snapchat: 'سناب شات',
