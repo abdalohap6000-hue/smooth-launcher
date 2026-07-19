@@ -13,6 +13,20 @@ const TYPE_MAP = {
   special_offer: 'عرض خاص', personal_story: 'قصة شخصية', interactive_q: 'سؤال تفاعلي',
 };
 
+const LENGTH_MAP = {
+  short:  { label: 'قصير',  words: 'حوالي ٤٠-٦٠ كلمة' },
+  medium: { label: 'متوسط', words: 'حوالي ١٢٠-١٧٠ كلمة' },
+  long:   { label: 'طويل',  words: 'حوالي ٢٥٠-٣٥٠ كلمة' },
+};
+
+const LANGUAGE_MAP = {
+  ar:      'العربية الفصحى المعاصرة',
+  ar_eg:   'اللهجة المصرية العامية',
+  ar_gulf: 'اللهجة الخليجية',
+  en:      'English (natural, native-level)',
+  fr:      'Français (naturel, natif)',
+};
+
 const PLATFORM_MAP = {
   instagram: 'إنستغرام', tiktok: 'تيك توك', twitter: 'تويتر / X',
   youtube: 'يوتيوب', snapchat: 'سناب شات',
@@ -101,9 +115,11 @@ async function callAI({ system, prompt }) {
   return (data?.text || '').trim();
 }
 
-export async function generateContent({ platforms, tone, postType, userInput }) {
+export async function generateContent({ platforms, tone, postType, userInput, length = 'medium', language = 'ar' }) {
   const toneName = TONE_MAP[tone] || tone;
   const typeName = TYPE_MAP[postType] || postType;
+  const lengthCfg = LENGTH_MAP[length] || LENGTH_MAP.medium;
+  const languageName = LANGUAGE_MAP[language] || LANGUAGE_MAP.ar;
 
   const generateForPlatform = async (platform) => {
     const platformName = PLATFORM_MAP[platform] || platform;
@@ -112,14 +128,17 @@ export async function generateContent({ platforms, tone, postType, userInput }) 
     const prompt = `المنصة: ${platformName}
 الأسلوب المطلوب: ${toneName}
 نوع المنشور: ${typeName}
+لغة الإخراج: ${languageName} — اكتب المنشور كاملاً بهذه اللغة/اللهجة فقط.
+طول النص: ${lengthCfg.label} (${lengthCfg.words}) — التزم بهذا المدى بدقة وتجاوز إرشادات طول المنصة عند التعارض.
 فكرة/موضوع المستخدم: ${userInput}
 
-إرشادات المنصة (التزم بها حرفياً):
+إرشادات المنصة (استرشد بها في الأسلوب والبنية، لكن الطول أعلاه أولوية):
 ${platformGuide}
 
 المطلوب:
-- منشور واحد مصقول جاهز للنشر مباشرة.
+- منشور واحد مصقول جاهز للنشر مباشرة بلغة "${languageName}".
 - التزم بالأسلوب "${toneName}" ونوع المنشور "${typeName}" بدقة.
+- الطول: ${lengthCfg.words}.
 - لا تُضِف عنواناً، ولا مقدمة تفسيرية، ولا علامات اقتباس، ولا أي نص قبل أو بعد المنشور.
 - تأكد من صحة الإملاء والنحو قبل الإرسال.`;
 

@@ -5,6 +5,7 @@ import PlatformSelector from "../components/qalami/PlatformSelector";
 import ToneSelector from "../components/qalami/ToneSelector";
 import PostTypeGrid from "../components/qalami/PostTypeGrid";
 import ContentInput from "../components/qalami/ContentInput";
+import LengthLanguageSelector from "../components/qalami/LengthLanguageSelector";
 import GenerateButton from "../components/qalami/GenerateButton";
 import FreeTierPill from "../components/qalami/FreeTierPill";
 import BottomNav from "../components/qalami/BottomNav";
@@ -17,6 +18,8 @@ export default function Home() {
   const [selectedTone, setSelectedTone] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [userInput, setUserInput] = useState("");
+  const [length, setLength] = useState("medium");
+  const [language, setLanguage] = useState("ar");
   const [isLoading, setIsLoading] = useState(false);
 
   const freeTier = getFreeTierStatus();
@@ -31,7 +34,7 @@ export default function Home() {
     const status = getFreeTierStatus();
     if (!status.canGenerate) { navigate("/premium"); return; }
     setIsLoading(true);
-    const results = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput });
+    const results = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language });
     incrementUsage();
     sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput }));
     setIsLoading(false);
@@ -63,6 +66,9 @@ export default function Home() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <PostTypeGrid selected={selectedType} onSelect={setSelectedType} />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+          <LengthLanguageSelector length={length} onLengthChange={setLength} language={language} onLanguageChange={setLanguage} />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <ContentInput value={userInput} onChange={setUserInput} />
