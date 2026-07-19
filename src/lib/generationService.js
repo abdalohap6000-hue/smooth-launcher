@@ -93,7 +93,7 @@ async function callAI({ system, prompt }) {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({ system, prompt, model: getSelectedModel() }),
+    body: JSON.stringify({ system, prompt, model: getSelectedModel(), temperature: 0.75 }),
   });
 
   const data = await res.json().catch(() => ({}));
