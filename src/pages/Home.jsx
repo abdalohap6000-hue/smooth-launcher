@@ -67,6 +67,9 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <PostTypeGrid selected={selectedType} onSelect={setSelectedType} />
         </motion.div>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+          <LengthLanguageSelector length={length} onLengthChange={setLength} language={language} onLanguageChange={setLanguage} />
+        </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <ContentInput value={userInput} onChange={setUserInput} />
         </motion.div>
