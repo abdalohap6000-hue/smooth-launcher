@@ -110,14 +110,18 @@ export async function generateContent({ platforms, tone, postType, userInput }) 
     const platformGuide = PLATFORM_GUIDELINES[platform] || '';
 
     const prompt = `المنصة: ${platformName}
-الأسلوب: ${toneName}
+الأسلوب المطلوب: ${toneName}
 نوع المنشور: ${typeName}
-الفكرة: ${userInput}
+فكرة/موضوع المستخدم: ${userInput}
 
-إرشادات المنصة:
+إرشادات المنصة (التزم بها حرفياً):
 ${platformGuide}
 
-اكتب المنشور مباشرة بلا عنوان ولا مقدمة.`;
+المطلوب:
+- منشور واحد مصقول جاهز للنشر مباشرة.
+- التزم بالأسلوب "${toneName}" ونوع المنشور "${typeName}" بدقة.
+- لا تُضِف عنواناً، ولا مقدمة تفسيرية، ولا علامات اقتباس، ولا أي نص قبل أو بعد المنشور.
+- تأكد من صحة الإملاء والنحو قبل الإرسال.`;
 
     try {
       const text = await callAI({ system: SYSTEM_PROMPT, prompt });
