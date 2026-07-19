@@ -18,6 +18,8 @@ export default function Home() {
   const [selectedTone, setSelectedTone] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [userInput, setUserInput] = useState("");
+  const [length, setLength] = useState("medium");
+  const [language, setLanguage] = useState("ar");
   const [isLoading, setIsLoading] = useState(false);
 
   const freeTier = getFreeTierStatus();
