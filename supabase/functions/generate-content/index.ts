@@ -41,6 +41,7 @@ Deno.serve(async (req: Request) => {
     const prompt = body?.prompt;
     const system = body?.system;
     const requestedModel = typeof body?.model === "string" ? body.model : undefined;
+    const temperature = typeof body?.temperature === "number" ? body.temperature : 0.8;
 
     if (!prompt || typeof prompt !== "string") {
       return json({ error: "الحقل prompt مطلوب" }, 400);
@@ -58,7 +59,14 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ model, messages }),
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        top_p: 0.95,
+        frequency_penalty: 0.3,
+        presence_penalty: 0.2,
+      }),
     });
 
     if (!upstream.ok) {
