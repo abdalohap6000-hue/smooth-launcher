@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Splash() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setProgress((p) => { if (p >= 100) { clearInterval(interval); return 100; } return p + 2; });
+      setProgress((p) => (p >= 100 ? 100 : p + 2));
     }, 55);
-    const timer = setTimeout(() => navigate("/home"), 3000);
-    return () => { clearInterval(interval); clearTimeout(timer); };
-  }, [navigate]);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    const timer = setTimeout(() => {
+      navigate(user ? "/home" : "/auth", { replace: true });
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [loading, user, navigate]);
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center font-cairo" style={{ background: "#020203" }}>

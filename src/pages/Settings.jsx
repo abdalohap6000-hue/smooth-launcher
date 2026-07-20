@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, LogOut } from "lucide-react";
 import BottomNav from "../components/qalami/BottomNav";
 import { AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from "../lib/generationService";
 import { toast } from "sonner";
+import { useAuth, signOut } from "@/hooks/useAuth";
+
 
 const items = [
   { id: "reminders", icon: "🔔", label: "التذكيرات اليومية", type: "toggle" },
@@ -15,6 +18,8 @@ const items = [
 ];
 
 export default function Settings() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [toggles, setToggles] = useState({ reminders: true });
   const [model, setModel] = useState(getSelectedModel());
 
@@ -30,6 +35,12 @@ export default function Settings() {
     toast.success("تم تحديث النموذج");
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("تم تسجيل الخروج");
+    navigate("/auth", { replace: true });
+  };
+
   return (
     <div className="min-h-screen font-cairo pb-28" style={{ background: "#020203" }} dir="rtl">
       <div className="glass-header sticky top-0 z-40">
@@ -38,6 +49,31 @@ export default function Settings() {
         </div>
       </div>
       <div className="max-w-lg mx-auto px-5 pt-5 space-y-1 relative z-10">
+        {/* الحساب */}
+        {user && (
+          <div className="px-4 py-4 rounded-2xl mb-3"
+               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
+                     style={{ background: "linear-gradient(135deg, rgba(124,77,255,0.3), rgba(59,130,246,0.2))" }}>
+                  👤
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-white/40">مسجّل الدخول باسم</p>
+                  <p className="text-sm font-semibold text-white/85 truncate" dir="ltr">{user.email}</p>
+                </div>
+              </div>
+              <button onClick={handleSignOut}
+                className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
+                style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)", color: "#f87171" }}>
+                <LogOut className="w-3.5 h-3.5" /> خروج
+              </button>
+            </div>
+          </div>
+        )}
+
+
         {/* اختيار نموذج الذكاء الاصطناعي */}
         <div className="px-4 py-4 rounded-2xl mb-3"
              style={{ background: "rgba(124,77,255,0.06)", border: "1px solid rgba(124,77,255,0.2)" }}>
