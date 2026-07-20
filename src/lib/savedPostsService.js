@@ -1,31 +1,50 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// savedPostsService.js — localStorage-based replacement for Base44 entities
-// Swap this with your own DB/API if you have a backend.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const KEY = 'qalami_saved_posts';
-
-function load() {
-  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
-}
-function save(posts) { localStorage.setItem(KEY, JSON.stringify(posts)); }
+// Supabase-backed per-user saved posts library.
+import { supabase } from "@/integrations/supabase/client";
 
 export const SavedPost = {
-  list: (sortKey = '-created_date', limit = 50) => {
-    let posts = load();
-    if (sortKey.startsWith('-')) posts = posts.slice().reverse();
-    return Promise.resolve(posts.slice(0, limit));
+  list: async (_sortKey = "-created_date", limit = 50) => {
+    const { data, error } = await supabase
+      .from("saved_posts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error("SavedPost.list error:", error);
+      return [];
+    }
+    // Map created_at → created_date for existing UI code compatibility
+    return (data || []).map((r) => ({ ...r, created_date: r.created_at }));
   },
-  create: (data) => {
-    const posts = load();
-    const record = { ...data, id: crypto.randomUUID(), created_date: new Date().toISOString() };
-    posts.push(record);
-    save(posts);
-    return Promise.resolve(record);
+
+  create: async (data) => {
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !authData?.user) throw new Error("يجب تسجيل الدخول أولاً");
+
+    const payload = {
+      user_id: authData.user.id,
+      platform: data.platform,
+      tone: data.tone ?? null,
+      post_type: data.post_type ?? null,
+      user_input: data.user_input ?? null,
+      content: data.content,
+    };
+    const { data: inserted, error } = await supabase
+      .from("saved_posts")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) {
+      console.error("SavedPost.create error:", error);
+      throw error;
+    }
+    return { ...inserted, created_date: inserted.created_at };
   },
-  delete: (id) => {
-    const posts = load().filter(p => p.id !== id);
-    save(posts);
-    return Promise.resolve();
+
+  delete: async (id) => {
+    const { error } = await supabase.from("saved_posts").delete().eq("id", id);
+    if (error) {
+      console.error("SavedPost.delete error:", error);
+      throw error;
+    }
   },
 };
