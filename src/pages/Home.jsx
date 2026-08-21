@@ -20,6 +20,7 @@ export default function Home() {
   const [userInput, setUserInput] = useState("");
   const [length, setLength] = useState("medium");
   const [language, setLanguage] = useState("ar");
+  const [model, setModel] = useState(getSelectedModel());
   const [isLoading, setIsLoading] = useState(false);
 
   const freeTier = getFreeTierStatus();
