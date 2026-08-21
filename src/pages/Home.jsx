@@ -35,9 +35,9 @@ export default function Home() {
     const status = getFreeTierStatus();
     if (!status.canGenerate) { navigate("/premium"); return; }
     setIsLoading(true);
-    const results = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language });
+    const results = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language, model });
     incrementUsage();
-    sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput }));
+    sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, model }));
     setIsLoading(false);
     navigate("/results");
   };
