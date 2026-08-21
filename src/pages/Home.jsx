@@ -9,7 +9,7 @@ import LengthLanguageSelector from "../components/qalami/LengthLanguageSelector"
 import GenerateButton from "../components/qalami/GenerateButton";
 import FreeTierPill from "../components/qalami/FreeTierPill";
 import BottomNav from "../components/qalami/BottomNav";
-import { generateContent, getFreeTierStatus, incrementUsage } from "../lib/generationService";
+import { generateContent, getFreeTierStatus, incrementUsage, getSelectedModel } from "../lib/generationService";
 import { toast } from "sonner";
 
 export default function Home() {
