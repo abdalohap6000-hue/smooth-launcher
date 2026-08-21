@@ -9,7 +9,7 @@ import LengthLanguageSelector from "../components/qalami/LengthLanguageSelector"
 import GenerateButton from "../components/qalami/GenerateButton";
 import FreeTierPill from "../components/qalami/FreeTierPill";
 import BottomNav from "../components/qalami/BottomNav";
-import { generateContent, getFreeTierStatus, incrementUsage } from "../lib/generationService";
+import { generateContent, getFreeTierStatus, incrementUsage, getSelectedModel } from "../lib/generationService";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -20,6 +20,7 @@ export default function Home() {
   const [userInput, setUserInput] = useState("");
   const [length, setLength] = useState("medium");
   const [language, setLanguage] = useState("ar");
+  const [model, setModel] = useState(getSelectedModel());
   const [isLoading, setIsLoading] = useState(false);
 
   const freeTier = getFreeTierStatus();
@@ -34,9 +35,9 @@ export default function Home() {
     const status = getFreeTierStatus();
     if (!status.canGenerate) { navigate("/premium"); return; }
     setIsLoading(true);
-    const results = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language });
+    const results = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language, model });
     incrementUsage();
-    sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput }));
+    sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, model }));
     setIsLoading(false);
     navigate("/results");
   };

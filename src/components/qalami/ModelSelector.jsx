@@ -10,9 +10,10 @@ const TIER_STYLE = {
   pro: { color: "#FFD700", bg: "rgba(255,215,0,0.12)" },
 };
 
-export default function ModelSelector() {
+export default function ModelSelector({ value, onChange }) {
   const [open, setOpen] = useState(false);
-  const [model, setModel] = useState(getSelectedModel());
+  const [internal, setInternal] = useState(getSelectedModel());
+  const model = value || internal;
   const ref = useRef(null);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function ModelSelector() {
 
   const current = AVAILABLE_MODELS.find((m) => m.id === model) || AVAILABLE_MODELS[0];
 
-  const pick = (id) => { setModel(id); setSelectedModel(id); setOpen(false); };
+  const pick = (id) => { setInternal(id); setSelectedModel(id); onChange?.(id); setOpen(false); };
 
   return (
     <div className="relative" ref={ref} dir="rtl">
