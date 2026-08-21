@@ -96,7 +96,7 @@ export function setSelectedModel(id) {
   localStorage.setItem('qalami_ai_model', id);
 }
 
-async function callAI({ system, prompt }) {
+async function callAI({ system, prompt, model }) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error('إعدادات Supabase ناقصة (VITE_SUPABASE_URL أو VITE_SUPABASE_PUBLISHABLE_KEY).');
   }
@@ -108,7 +108,7 @@ async function callAI({ system, prompt }) {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({ system, prompt, model: getSelectedModel(), temperature: 0.75 }),
+    body: JSON.stringify({ system, prompt, model: model || getSelectedModel(), temperature: 0.75 }),
   });
 
   const data = await res.json().catch(() => ({}));
@@ -116,11 +116,12 @@ async function callAI({ system, prompt }) {
   return (data?.text || '').trim();
 }
 
-export async function generateContent({ platforms, tone, postType, userInput, length = 'medium', language = 'ar' }) {
+export async function generateContent({ platforms, tone, postType, userInput, length = 'medium', language = 'ar', model }) {
   const toneName = TONE_MAP[tone] || tone;
   const typeName = TYPE_MAP[postType] || postType;
   const lengthCfg = LENGTH_MAP[length] || LENGTH_MAP.medium;
   const languageName = LANGUAGE_MAP[language] || LANGUAGE_MAP.ar;
+  const modelId = model && AVAILABLE_MODELS.some((m) => m.id === model) ? model : getSelectedModel();
 
   const generateForPlatform = async (platform) => {
     const platformName = PLATFORM_MAP[platform] || platform;
