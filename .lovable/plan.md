@@ -1,50 +1,28 @@
-# خطة: تسجيل دخول + مكتبة لكل مستخدم
+# نقل اختيار نموذج الذكاء الاصطناعي إلى الصفحة الرئيسية
 
-## 1) قاعدة البيانات (Supabase migration)
+## الهدف
+يختار المستخدم النموذج مباشرة من الصفحة الرئيسية — أعلى خانة إدخال الفكرة وعلى يسارها — بدل الدخول إلى الإعدادات، مع ترتيب النماذج من الأخف إلى الأقوى وشعار مرئي لكل نموذج.
 
-- إنشاء `public.profiles` مرتبط بـ `auth.users(id)` (ON DELETE CASCADE) مع `full_name`, `avatar_url`, `created_at`.
-  - GRANTs + RLS: كل مستخدم يقرأ/يحدّث ملفه فقط.
-  - Trigger `on_auth_user_created` يستدعي `handle_new_user()` لإنشاء صف profile تلقائياً عند التسجيل.
-- إنشاء `public.saved_posts` بحقول: `id`, `user_id (uuid, NOT NULL, references auth.users)`, `platform`, `tone`, `post_type`, `user_input`, `content`, `created_at`.
-  - GRANTs لـ `authenticated` و `service_role` فقط (لا anon).
-  - RLS: `auth.uid() = user_id` لعمليات SELECT/INSERT/UPDATE/DELETE.
+## ما سيظهر للمستخدم
+- سطر فوق حقل "فكرتك": على اليمين عنوان "فكرتك"، وعلى اليسار زر صغير يعرض شعار Gemini + اسم النموذج الحالي + سهم.
+- الضغط عليه يفتح قائمة منسدلة أنيقة (نفس نمط الزجاج الداكن) بالنماذج مرتبة من العادي إلى الأقوى:
+  1. Gemini 2.5 Flash Lite — الأسرع والأخف
+  2. Gemini 3.1 Flash Lite — اقتصادي
+  3. Gemini 2.5 Flash — متوازن
+  4. Gemini 3.5 Flash — سريع ومتقدم
+  5. Gemini 3 Flash (الافتراضي)
+  6. Gemini 2.5 Pro — جودة عالية
+  7. Gemini 3.1 Pro — الأقوى
+- كل عنصر: شعار Gemini الحقيقي (الشرارة رباعية الفصوص بتدرّج Google الأزرق/البنفسجي) + الاسم + وصف قصير + شارة للفئة (Lite / Flash / Pro)، وعلامة ✓ على المختار.
+- الاختيار يُحفظ فوراً ويُطبَّق على كل توليد جديد (نفس التخزين الحالي في المتصفح).
 
-## 2) OAuth مع Google
+## الشعارات
+كل النماذج من عائلة Gemini، فسيُستخدم شعار Gemini الرسمي كأيقونة SVG داخلية (بدون تحميل صور خارجية)، مع تمييز الفئة بلون الشارة: Lite رمادي، Flash أزرق، Pro ذهبي.
 
-- تفعيل Google provider في Supabase (المستخدم يضيف Client ID/Secret من Google Cloud Console).
-- سأعرض رابط الإعدادات وخطوات Google Cloud بعد الموافقة.
-
-## 3) تأكيد البريد
-
-- سيبقى مُفعّلاً افتراضياً في Supabase — رسالة "تحقق من بريدك" بعد التسجيل، ودخول لا يتم قبل التأكيد.
-
-## 4) الواجهة (Frontend)
-
-- إنشاء `src/hooks/useAuth.js`: يوفر `user`, `session`, `loading` عبر `onAuthStateChange` + `getSession`.
-- إنشاء `src/pages/Auth.jsx`: تبويبان (تسجيل دخول / حساب جديد) + زر Google. يستخدم `signInWithPassword`, `signUp` (مع `emailRedirectTo: window.location.origin`), و `signInWithOAuth`.
-- إنشاء `src/components/ProtectedRoute.jsx`: يحوّل لـ `/auth` إذا لا يوجد جلسة.
-- تعديل `src/App.jsx`: إضافة مسار `/auth` وحماية `/home`, `/results`, `/history`, `/settings`, `/premium`.
-- تعديل `src/pages/Splash.jsx`: بعد التحميل يوجّه لـ `/home` إن كان مسجّلاً، وإلا `/auth`.
-- تعديل `src/pages/Settings.jsx`: عرض البريد + زر تسجيل الخروج.
-- تعديل `src/components/qalami/BottomNav.jsx` (إن لزم) لعرض حالة الحساب.
-
-## 5) خدمة المكتبة
-
-- إعادة كتابة `src/lib/savedPostsService.js`:
-  - `list()` → `supabase.from('saved_posts').select().order('created_at', desc).limit(50)`.
-  - `create(data)` → إدراج مع `user_id: (await supabase.auth.getUser()).data.user.id`.
-  - `delete(id)` → حذف بـ `id` (RLS تضمن الملكية).
-- حذف الاعتماد على `localStorage` للمكتبة (نبقيه فقط لتفضيلات النموذج/اللغة).
-
-## 6) بعد موافقتك
-
-1. تشغيل migration لإنشاء الجداول + السياسات + الـ trigger.
-2. كتابة/تعديل الملفات أعلاه.
-3. توجيهك لتفعيل Google provider في Supabase Dashboard مع الرابط المباشر.
-
-## تفاصيل تقنية
-
-- **لن نضع الأدوار في `profiles`** — لا حاجة الآن لـ user_roles؛ سأضيفه لاحقاً إن طُلبت صلاحيات إدارة.
-- **جلسة موثوقة**: أي فحص للهوية داخل التطبيق يستخدم `supabase.auth.getUser()` عند الحاجة، و `onAuthStateChange` لتحديث الحالة.
-- **إعادة توجيه OAuth**: `redirectTo: ${window.location.origin}/home`.
-- لن أتعامل مع نسيان كلمة المرور في هذه الخطة (يمكن إضافته لاحقاً بصفحة `/reset-password`).
+## التفاصيل التقنية
+- `src/lib/generationService.js`: إعادة ترتيب `AVAILABLE_MODELS` من الأضعف إلى الأقوى وإضافة حقول `tier` و`desc` لكل نموذج.
+- ملف جديد `src/components/qalami/GeminiLogo.jsx`: أيقونة SVG لشعار Gemini بتدرّج ألوان حقيقي.
+- ملف جديد `src/components/qalami/ModelSelector.jsx`: زر + قائمة منسدلة (framer-motion) تقرأ `getSelectedModel` وتكتب عبر `setSelectedModel`.
+- `src/components/qalami/ContentInput.jsx`: صف رأسي جديد يضم عنوان "فكرتك" يميناً و`ModelSelector` يساراً (استقبال الاختيار كخاصية اختيارية).
+- `src/pages/Settings.jsx`: إبقاء القائمة الحالية كما هي مع مزامنة القيمة نفسها (لا تكرار في المنطق).
+- لا تغيير في Edge Function — قائمة النماذج المسموح بها تشمل هذه النماذج بالفعل.
