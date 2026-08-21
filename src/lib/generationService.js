@@ -145,7 +145,7 @@ ${platformGuide}
 - تأكد من صحة الإملاء والنحو قبل الإرسال.`;
 
     try {
-      const text = await callAI({ system: SYSTEM_PROMPT, prompt });
+      const text = await callAI({ system: SYSTEM_PROMPT, prompt, model: modelId });
       return [platform, text];
     } catch (err) {
       return [platform, `⚠️ ${err.message}`];
