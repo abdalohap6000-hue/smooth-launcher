@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
+import ModelSelector from "./ModelSelector";
 
 const inspirations = ["منتج جديد 🛒", "نصيحة حياتية 💡", "إنجاز شخصي 🏆", "عرض لفترة محدودة ⚡", "سؤال للجمهور 🎤", "قصة نجاح 🌟"];
 
@@ -9,7 +10,10 @@ export default function ContentInput({ value, onChange }) {
 
   return (
     <div>
-      <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">فكرتك</p>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <p className="text-xs font-bold text-white/40 uppercase tracking-widest">فكرتك</p>
+        <ModelSelector />
+      </div>
       <div className="relative rounded-2xl transition-all duration-300"
         style={{ background: "rgba(255,255,255,0.025)",
           border: `1.5px solid ${focused ? "rgba(124,77,255,0.55)" : "rgba(255,255,255,0.07)"}`,

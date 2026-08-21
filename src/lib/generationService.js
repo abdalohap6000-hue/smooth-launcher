@@ -77,14 +77,15 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const DEFAULT_MODEL = import.meta.env.VITE_AI_MODEL || 'google/gemini-3-flash-preview';
 const EDGE_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/generate-content` : '';
 
+// مرتبة من الأخف/العادي إلى الأقوى
 export const AVAILABLE_MODELS = [
-  { id: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash (الافتراضي)' },
-  { id: 'google/gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
-  { id: 'google/gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite' },
-  { id: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
-  { id: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite' },
+  { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', tier: 'lite', desc: 'الأسرع والأخف' },
+  { id: 'google/gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', tier: 'lite', desc: 'اقتصادي وسريع' },
+  { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', tier: 'flash', desc: 'متوازن' },
+  { id: 'google/gemini-3.5-flash', label: 'Gemini 3.5 Flash', tier: 'flash', desc: 'سريع ومتقدم' },
+  { id: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash', tier: 'flash', desc: 'الافتراضي' },
+  { id: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro', tier: 'pro', desc: 'جودة عالية' },
+  { id: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro', tier: 'pro', desc: 'الأقوى' },
 ];
 
 export function getSelectedModel() {
