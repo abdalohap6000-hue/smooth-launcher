@@ -96,24 +96,50 @@ export function setSelectedModel(id) {
   localStorage.setItem('qalami_ai_model', id);
 }
 
+// معاملات توليد مضبوطة تلقائياً حسب فئة النموذج (كلما كان النموذج أخف، قلّلنا العشوائية).
+const TIER_PARAMS = {
+  lite: { temperature: 0.6, top_p: 0.9, frequency_penalty: 0.4, presence_penalty: 0.15 },
+  flash: { temperature: 0.75, top_p: 0.95, frequency_penalty: 0.3, presence_penalty: 0.2 },
+  pro: { temperature: 0.9, top_p: 0.97, frequency_penalty: 0.2, presence_penalty: 0.3 },
+};
+
+export function getModelParams(modelId) {
+  const tier = AVAILABLE_MODELS.find((m) => m.id === modelId)?.tier || 'flash';
+  return { ...(TIER_PARAMS[tier] || TIER_PARAMS.flash), tier };
+}
+
 async function callAI({ system, prompt, model }) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error('إعدادات Supabase ناقصة (VITE_SUPABASE_URL أو VITE_SUPABASE_PUBLISHABLE_KEY).');
   }
 
-  const res = await fetch(EDGE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({ system, prompt, model: model || getSelectedModel(), temperature: 0.75 }),
-  });
+  const modelId = model || getSelectedModel();
+  const { tier, ...params } = getModelParams(modelId);
+
+  let res;
+  try {
+    res = await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ system, prompt, model: modelId, ...params }),
+    });
+  } catch {
+    throw new Error('تعذّر الاتصال بالخادم — تحقّق من اتصال الإنترنت ثم أعد المحاولة.');
+  }
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || `فشل الاتصال (${res.status})`);
-  return (data?.text || '').trim();
+  if (!res.ok) {
+    const reason = data?.error || data?.details || `رمز الخطأ ${res.status}`;
+    throw new Error(`فشل التوليد بنموذج ${modelId}: ${reason}`);
+  }
+
+  const text = (data?.text || '').trim();
+  if (!text) throw new Error(`لم يُرجِع النموذج ${modelId} أي نص — جرّب نموذجاً آخر أو أعد المحاولة.`);
+  return text;
 }
 
 export async function generateContent({ platforms, tone, postType, userInput, length = 'medium', language = 'ar', model }) {
