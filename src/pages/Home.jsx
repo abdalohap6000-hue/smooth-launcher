@@ -72,7 +72,7 @@ export default function Home() {
           <LengthLanguageSelector length={length} onLengthChange={setLength} language={language} onLanguageChange={setLanguage} />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <ContentInput value={userInput} onChange={setUserInput} />
+          <ContentInput value={userInput} onChange={setUserInput} model={model} onModelChange={setModel} />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <GenerateButton onClick={handleGenerate} isLoading={isLoading} disabled={!canGenerate} />
