@@ -172,14 +172,19 @@ ${platformGuide}
 
     try {
       const text = await callAI({ system: SYSTEM_PROMPT, prompt, model: modelId });
-      return [platform, text];
+      return { platform, text };
     } catch (err) {
-      return [platform, `⚠️ ${err.message}`];
+      return { platform, text: `⚠️ ${err.message}`, error: err.message };
     }
   };
 
-  const entries = await Promise.all(platforms.map(generateForPlatform));
-  return Object.fromEntries(entries);
+  const settled = await Promise.all(platforms.map(generateForPlatform));
+  const results = Object.fromEntries(settled.map((r) => [r.platform, r.text]));
+  const errors = settled
+    .filter((r) => r.error)
+    .map((r) => ({ platform: PLATFORM_MAP[r.platform] || r.platform, message: r.error }));
+
+  return { results, errors, model: modelId };
 }
 
 
