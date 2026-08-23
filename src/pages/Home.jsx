@@ -35,10 +35,19 @@ export default function Home() {
     const status = getFreeTierStatus();
     if (!status.canGenerate) { navigate("/premium"); return; }
     setIsLoading(true);
-    const results = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language, model });
+    const { results, errors } = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language, model });
+    setIsLoading(false);
+
+    if (errors.length) {
+      toast.error(`فشل التوليد (${errors.map((e) => e.platform).join("، ")})`, {
+        description: errors[0].message,
+        duration: 8000,
+      });
+      if (errors.length === selectedPlatforms.length) return;
+    }
+
     incrementUsage();
     sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, model }));
-    setIsLoading(false);
     navigate("/results");
   };
 
