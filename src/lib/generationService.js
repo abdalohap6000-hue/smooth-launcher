@@ -3,6 +3,8 @@
 // بدلاً من الاتصال المباشر بمزود AI، لتجنب كشف مفتاح API في المتصفح.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { supabase } from '@/integrations/supabase/client';
+
 const TONE_MAP = {
   exciting: 'مثير وجذاب', funny: 'فكاهي وممتع', professional: 'احترافي ورسمي',
   educational: 'تعليمي ومفيد', promotional: 'إعلاني وتسويقي', emotional: 'عاطفي ومؤثر',
@@ -116,6 +118,14 @@ async function callAI({ system, prompt, model }) {
   const modelId = model || getSelectedModel();
   const { tier, ...params } = getModelParams(modelId);
 
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (!accessToken) {
+    const err = new Error('يجب تسجيل الدخول لاستخدام التوليد.');
+    err.code = 'UNAUTHENTICATED';
+    throw err;
+  }
+
   let res;
   try {
     res = await fetch(EDGE_URL, {
@@ -123,7 +133,7 @@ async function callAI({ system, prompt, model }) {
       headers: {
         'Content-Type': 'application/json',
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ system, prompt, model: modelId, ...params }),
     });
@@ -134,13 +144,16 @@ async function callAI({ system, prompt, model }) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const reason = data?.error || data?.details || `رمز الخطأ ${res.status}`;
-    throw new Error(`فشل التوليد بنموذج ${modelId}: ${reason}`);
+    const err = new Error(reason);
+    err.code = data?.code;
+    throw err;
   }
 
   const text = (data?.text || '').trim();
   if (!text) throw new Error(`لم يُرجِع النموذج ${modelId} أي نص — جرّب نموذجاً آخر أو أعد المحاولة.`);
-  return text;
+  return { text, balance: data?.balance, plan: data?.plan };
 }
+
 
 export async function generateContent({ platforms, tone, postType, userInput, length = 'medium', language = 'ar', model }) {
   const toneName = TONE_MAP[tone] || tone;
@@ -171,10 +184,10 @@ ${platformGuide}
 - تأكد من صحة الإملاء والنحو قبل الإرسال.`;
 
     try {
-      const text = await callAI({ system: SYSTEM_PROMPT, prompt, model: modelId });
-      return { platform, text };
+      const { text, balance, plan } = await callAI({ system: SYSTEM_PROMPT, prompt, model: modelId });
+      return { platform, text, balance, plan };
     } catch (err) {
-      return { platform, text: `⚠️ ${err.message}`, error: err.message };
+      return { platform, text: `⚠️ ${err.message}`, error: err.message, code: err.code };
     }
   };
 
@@ -182,21 +195,11 @@ ${platformGuide}
   const results = Object.fromEntries(settled.map((r) => [r.platform, r.text]));
   const errors = settled
     .filter((r) => r.error)
-    .map((r) => ({ platform: PLATFORM_MAP[r.platform] || r.platform, message: r.error }));
+    .map((r) => ({ platform: PLATFORM_MAP[r.platform] || r.platform, message: r.error, code: r.code }));
 
-  return { results, errors, model: modelId };
+  const balances = settled.filter((r) => typeof r.balance === 'number').map((r) => r.balance);
+  const balance = balances.length ? Math.min(...balances) : undefined;
+
+  return { results, errors, model: modelId, balance };
 }
 
-
-// ── الاستخدام المجاني بدون اشتراك (غير محدود) ─────────────────────────────
-// تمّت إزالة السقف اليومي — يمكن للمستخدم التوليد بدون اشتراك Pro.
-export function getFreeTierStatus() {
-  return { remaining: Infinity, used: 0, max: Infinity, canGenerate: true };
-}
-
-export function incrementUsage() {
-  const today = new Date().toDateString();
-  localStorage.setItem('qalami_last_gen_date', today);
-  const count = parseInt(localStorage.getItem('qalami_daily_count') || '0');
-  localStorage.setItem('qalami_daily_count', String(count + 1));
-}

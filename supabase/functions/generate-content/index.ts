@@ -1,5 +1,6 @@
 // Edge Function: generate-content
-// وسيط آمن لاستدعاء Lovable AI Gateway دون كشف المفتاح في المتصفح.
+// وسيط آمن لاستدعاء Lovable AI Gateway + التحقق من المستخدم وخصم النقاط.
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,9 @@ const corsHeaders = {
 const AI_BASE_URL = "https://ai.gateway.lovable.dev/v1";
 const DEFAULT_MODEL = Deno.env.get("VITE_AI_MODEL") || "google/gemini-3-flash-preview";
 
-// النماذج المسموح بها فقط (allowlist) لمنع تمرير قيم عشوائية من العميل.
+// النموذج المجاني الوحيد المتاح لغير المشتركين
+const FREE_MODEL = "google/gemini-2.5-flash-lite";
+
 const ALLOWED_MODELS = new Set([
   "google/gemini-3-flash-preview",
   "google/gemini-3.5-flash",
@@ -37,6 +40,19 @@ Deno.serve(async (req: Request) => {
       return json({ error: "LOVABLE_API_KEY غير مضبوط في الخادم. أضِفه من Supabase → Edge Functions → Secrets." }, 500);
     }
 
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
+    // ── 1) التحقق من المستخدم ──────────────────────────────────────────────
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: userData, error: userErr } = await admin.auth.getUser(token);
+    const user = userData?.user;
+    if (userErr || !user) {
+      return json({ error: "يجب تسجيل الدخول لاستخدام التوليد.", code: "UNAUTHENTICATED" }, 401);
+    }
+
     const body = await req.json().catch(() => null);
     const prompt = body?.prompt;
     const system = body?.system;
@@ -48,13 +64,54 @@ Deno.serve(async (req: Request) => {
 
     const model = requestedModel && ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
 
-    // معاملات التوليد تصل من العميل مضبوطة حسب فئة النموذج — نحصرها ضمن مدى آمن.
+    // ── 2) قراءة الرصيد والخطة (مع تجديد الباقة إن حان موعدها) ─────────────
+    await admin.rpc("renew_credits", { _user_id: user.id });
+    const { data: credits } = await admin
+      .from("user_credits")
+      .select("balance, plan, renews_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const plan = credits?.plan ?? "free";
+    const isPro = plan === "pro";
+
+    // ── 3) قفل النماذج ─────────────────────────────────────────────────────
+    if (!isPro && model !== FREE_MODEL) {
+      return json({
+        error: "هذا النموذج متاح لمشتركي Pro فقط — النموذج المجاني هو Gemini 2.5 Flash Lite.",
+        code: "MODEL_LOCKED",
+        model,
+      }, 403);
+    }
+
+    // ── 4) خصم نقطة واحدة (نقطة لكل منصة = طلب واحد لكل منصة) ─────────────
+    const { data: newBalance, error: consumeErr } = await admin.rpc("consume_credits", {
+      _user_id: user.id,
+      _amount: 1,
+      _model: model,
+    });
+
+    if (consumeErr) {
+      const noCredits = String(consumeErr.message || "").includes("NO_CREDITS");
+      return json({
+        error: noCredits
+          ? "انتهت نقاطك — اشترك في Pro للحصول على باقة نقاط شهرية."
+          : `تعذّر خصم النقاط: ${consumeErr.message}`,
+        code: noCredits ? "NO_CREDITS" : "CREDITS_ERROR",
+      }, noCredits ? 402 : 500);
+    }
+
+    const refund = async (reason: string) => {
+      await admin.rpc("refund_credits", { _user_id: user.id, _amount: 1, _reason: reason });
+    };
+
+    // ── 5) معاملات التوليد ─────────────────────────────────────────────────
     const num = (v: unknown, fallback: number, min: number, max: number) =>
       typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
 
-    const isPro = model.includes("-pro");
+    const isProModel = model.includes("-pro");
     const isLite = model.includes("-lite");
-    const defaults = isPro
+    const defaults = isProModel
       ? { temperature: 0.9, top_p: 0.97, frequency_penalty: 0.2, presence_penalty: 0.3 }
       : isLite
       ? { temperature: 0.6, top_p: 0.9, frequency_penalty: 0.4, presence_penalty: 0.15 }
@@ -71,14 +128,17 @@ Deno.serve(async (req: Request) => {
     if (system && typeof system === "string") messages.push({ role: "system", content: system });
     messages.push({ role: "user", content: prompt });
 
-    const upstream = await fetch(`${AI_BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({ model, messages, ...params }),
-    });
+    let upstream: Response;
+    try {
+      upstream = await fetch(`${AI_BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model, messages, ...params }),
+      });
+    } catch (e) {
+      await refund("فشل الاتصال بمزود الذكاء الاصطناعي");
+      return json({ error: "تعذّر الاتصال بمزود الذكاء الاصطناعي — أعد المحاولة.", details: String(e) }, 502);
+    }
 
     if (!upstream.ok) {
       const errText = await upstream.text().catch(() => "");
@@ -110,12 +170,18 @@ Deno.serve(async (req: Request) => {
             ? `عطل مؤقت في مزود الذكاء الاصطناعي (${upstream.status}) — أعد المحاولة بعد لحظات.`
             : `فشل الاتصال بـ AI (${upstream.status})${upstreamMsg ? ` — ${upstreamMsg}` : ""}`;
       }
+      await refund("فشل التوليد");
       return json({ error: message, details: upstreamMsg || errText, model, params }, upstream.status);
     }
 
     const data = await upstream.json();
     const text = data?.choices?.[0]?.message?.content?.trim() || "";
-    return json({ text, model });
+    if (!text) {
+      await refund("رد فارغ من النموذج");
+      return json({ error: `لم يُرجِع النموذج ${model} أي نص — جرّب نموذجاً آخر.`, model }, 502);
+    }
+
+    return json({ text, model, balance: newBalance, plan });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : "خطأ غير معروف" }, 500);
   }
