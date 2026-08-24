@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import GeminiLogo from "./GeminiLogo";
 import { AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from "../../lib/generationService";
+import { isModelLocked } from "../../lib/creditsService";
 
 const TIER_STYLE = {
   lite: { color: "#9CA3AF", bg: "rgba(156,163,175,0.12)" },
@@ -10,11 +12,12 @@ const TIER_STYLE = {
   pro: { color: "#FFD700", bg: "rgba(255,215,0,0.12)" },
 };
 
-export default function ModelSelector({ value, onChange }) {
+export default function ModelSelector({ value, onChange, plan = "free" }) {
   const [open, setOpen] = useState(false);
   const [internal, setInternal] = useState(getSelectedModel());
   const model = value || internal;
   const ref = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -24,7 +27,10 @@ export default function ModelSelector({ value, onChange }) {
 
   const current = AVAILABLE_MODELS.find((m) => m.id === model) || AVAILABLE_MODELS[0];
 
-  const pick = (id) => { setInternal(id); setSelectedModel(id); onChange?.(id); setOpen(false); };
+  const pick = (id) => {
+    if (isModelLocked(id, plan)) { setOpen(false); navigate("/premium"); return; }
+    setInternal(id); setSelectedModel(id); onChange?.(id); setOpen(false);
+  };
 
   return (
     <div className="relative" ref={ref} dir="rtl">
@@ -57,25 +63,33 @@ export default function ModelSelector({ value, onChange }) {
             {AVAILABLE_MODELS.map((m) => {
               const tier = TIER_STYLE[m.tier] || TIER_STYLE.flash;
               const active = m.id === model;
+              const locked = isModelLocked(m.id, plan);
               return (
                 <button
                   key={m.id}
                   onClick={() => pick(m.id)}
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-right transition-colors hover:bg-white/[0.05]"
-                  style={{ background: active ? "rgba(124,77,255,0.12)" : "transparent" }}
+                  style={{ background: active ? "rgba(124,77,255,0.12)" : "transparent", opacity: locked ? 0.55 : 1 }}
                 >
                   <GeminiLogo size={16} />
                   <span className="flex-1 min-w-0">
                     <span className="block text-[12px] font-bold text-white/85 truncate">{m.label}</span>
-                    <span className="block text-[10px] text-white/35 truncate">{m.desc}</span>
+                    <span className="block text-[10px] text-white/35 truncate">
+                      {locked ? "يتطلب اشتراك Pro" : m.desc}
+                    </span>
                   </span>
-                  <span
-                    className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase"
-                    style={{ background: tier.bg, color: tier.color }}
-                  >
-                    {m.tier}
-                  </span>
-                  {active && <Check className="w-3.5 h-3.5 text-purple-300" />}
+                  {locked ? (
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black"
+                      style={{ background: "rgba(255,215,0,0.12)", color: "#FFD700" }}>
+                      <Lock className="w-2.5 h-2.5" /> PRO
+                    </span>
+                  ) : (
+                    <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase"
+                      style={{ background: tier.bg, color: tier.color }}>
+                      {m.tier}
+                    </span>
+                  )}
+                  {active && !locked && <Check className="w-3.5 h-3.5 text-purple-300" />}
                 </button>
               );
             })}
