@@ -3,6 +3,8 @@
 // بدلاً من الاتصال المباشر بمزود AI، لتجنب كشف مفتاح API في المتصفح.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { supabase } from '@/integrations/supabase/client';
+
 const TONE_MAP = {
   exciting: 'مثير وجذاب', funny: 'فكاهي وممتع', professional: 'احترافي ورسمي',
   educational: 'تعليمي ومفيد', promotional: 'إعلاني وتسويقي', emotional: 'عاطفي ومؤثر',
