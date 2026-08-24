@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import PlatformSelector from "../components/qalami/PlatformSelector";
@@ -7,9 +7,10 @@ import PostTypeGrid from "../components/qalami/PostTypeGrid";
 import ContentInput from "../components/qalami/ContentInput";
 import LengthLanguageSelector from "../components/qalami/LengthLanguageSelector";
 import GenerateButton from "../components/qalami/GenerateButton";
-import FreeTierPill from "../components/qalami/FreeTierPill";
+import CreditsPill from "../components/qalami/CreditsPill";
 import BottomNav from "../components/qalami/BottomNav";
-import { generateContent, getFreeTierStatus, incrementUsage, getSelectedModel } from "../lib/generationService";
+import { generateContent, getSelectedModel } from "../lib/generationService";
+import { fetchCredits, isModelLocked, FREE_MODEL, toArabicDigits } from "../lib/creditsService";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -22,31 +23,68 @@ export default function Home() {
   const [language, setLanguage] = useState("ar");
   const [model, setModel] = useState(getSelectedModel());
   const [isLoading, setIsLoading] = useState(false);
+  const [credits, setCredits] = useState(null);
+  const [loadingCredits, setLoadingCredits] = useState(true);
 
-  const freeTier = getFreeTierStatus();
+  const plan = credits?.plan ?? "free";
+  const balance = credits?.balance ?? 0;
+
+  useEffect(() => {
+    let alive = true;
+    fetchCredits().then((c) => {
+      if (!alive) return;
+      setCredits(c);
+      setLoadingCredits(false);
+      // إن كان النموذج المحفوظ مقفلاً، ارجع للنموذج المجاني
+      if (c && isModelLocked(getSelectedModel(), c.plan)) setModel(FREE_MODEL);
+    });
+    return () => { alive = false; };
+  }, []);
+
   const togglePlatform = useCallback((id) => {
     setSelectedPlatforms((prev) => prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]);
   }, []);
 
+  const cost = selectedPlatforms.length;
   const canGenerate = selectedPlatforms.length > 0 && selectedTone && selectedType && userInput.trim().length > 0;
 
   const handleGenerate = async () => {
     if (!canGenerate) { toast.error("يرجى تعبئة جميع الحقول المطلوبة"); return; }
-    const status = getFreeTierStatus();
-    if (!status.canGenerate) { navigate("/premium"); return; }
+
+    if (isModelLocked(model, plan)) {
+      toast.error("هذا النموذج يتطلب اشتراك Pro", { description: "اختر النموذج المجاني أو اشترك لفتح كل النماذج." });
+      navigate("/premium");
+      return;
+    }
+
+    if (balance < cost) {
+      toast.error(`رصيدك غير كافٍ — تحتاج ${toArabicDigits(cost)} نقطة ولديك ${toArabicDigits(balance)}`, {
+        description: "اشترك في Pro للحصول على باقة نقاط شهرية.",
+      });
+      navigate("/premium");
+      return;
+    }
+
     setIsLoading(true);
-    const { results, errors } = await generateContent({ platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language, model });
+    const { results, errors, balance: newBalance } = await generateContent({
+      platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, length, language, model,
+    });
     setIsLoading(false);
+
+    if (typeof newBalance === "number") setCredits((c) => ({ ...(c || {}), balance: newBalance }));
+    else fetchCredits().then((c) => c && setCredits(c));
 
     if (errors.length) {
       toast.error(`فشل التوليد (${errors.map((e) => e.platform).join("، ")})`, {
         description: errors[0].message,
         duration: 8000,
       });
-      if (errors.length === selectedPlatforms.length) return;
+      if (errors.length === selectedPlatforms.length) {
+        if (errors[0].code === "NO_CREDITS" || errors[0].code === "MODEL_LOCKED") navigate("/premium");
+        return;
+      }
     }
 
-    incrementUsage();
     sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, model }));
     navigate("/results");
   };
@@ -63,11 +101,12 @@ export default function Home() {
           <motion.button whileTap={{ scale: 0.92 }} onClick={() => navigate("/premium")}
             className="px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
             style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.25)", color: "#FFD700" }}>
-            👑 Pro
+            👑 {plan === "pro" ? "Pro" : "ترقية"}
           </motion.button>
         </div>
       </div>
       <div className="max-w-lg mx-auto px-5 pt-6 space-y-7 relative z-10">
+        <CreditsPill credits={credits} loading={loadingCredits} />
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <PlatformSelector selected={selectedPlatforms} onToggle={togglePlatform} />
         </motion.div>
@@ -81,10 +120,15 @@ export default function Home() {
           <LengthLanguageSelector length={length} onLengthChange={setLength} language={language} onLanguageChange={setLanguage} />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <ContentInput value={userInput} onChange={setUserInput} model={model} onModelChange={setModel} />
+          <ContentInput value={userInput} onChange={setUserInput} model={model} onModelChange={setModel} plan={plan} />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <GenerateButton onClick={handleGenerate} isLoading={isLoading} disabled={!canGenerate} />
+          {cost > 0 && (
+            <p className="text-center text-[11px] mt-2 text-white/30 font-semibold">
+              تكلفة هذه العملية: {toArabicDigits(cost)} نقطة ({toArabicDigits(cost)} منصة)
+            </p>
+          )}
         </motion.div>
       </div>
       <BottomNav />
