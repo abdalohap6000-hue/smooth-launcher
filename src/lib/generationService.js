@@ -116,6 +116,14 @@ async function callAI({ system, prompt, model }) {
   const modelId = model || getSelectedModel();
   const { tier, ...params } = getModelParams(modelId);
 
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (!accessToken) {
+    const err = new Error('يجب تسجيل الدخول لاستخدام التوليد.');
+    err.code = 'UNAUTHENTICATED';
+    throw err;
+  }
+
   let res;
   try {
     res = await fetch(EDGE_URL, {
@@ -123,7 +131,7 @@ async function callAI({ system, prompt, model }) {
       headers: {
         'Content-Type': 'application/json',
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ system, prompt, model: modelId, ...params }),
     });
@@ -134,13 +142,16 @@ async function callAI({ system, prompt, model }) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const reason = data?.error || data?.details || `رمز الخطأ ${res.status}`;
-    throw new Error(`فشل التوليد بنموذج ${modelId}: ${reason}`);
+    const err = new Error(reason);
+    err.code = data?.code;
+    throw err;
   }
 
   const text = (data?.text || '').trim();
   if (!text) throw new Error(`لم يُرجِع النموذج ${modelId} أي نص — جرّب نموذجاً آخر أو أعد المحاولة.`);
-  return text;
+  return { text, balance: data?.balance, plan: data?.plan };
 }
+
 
 export async function generateContent({ platforms, tone, postType, userInput, length = 'medium', language = 'ar', model }) {
   const toneName = TONE_MAP[tone] || tone;
