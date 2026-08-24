@@ -182,10 +182,10 @@ ${platformGuide}
 - تأكد من صحة الإملاء والنحو قبل الإرسال.`;
 
     try {
-      const text = await callAI({ system: SYSTEM_PROMPT, prompt, model: modelId });
-      return { platform, text };
+      const { text, balance, plan } = await callAI({ system: SYSTEM_PROMPT, prompt, model: modelId });
+      return { platform, text, balance, plan };
     } catch (err) {
-      return { platform, text: `⚠️ ${err.message}`, error: err.message };
+      return { platform, text: `⚠️ ${err.message}`, error: err.message, code: err.code };
     }
   };
 
@@ -193,21 +193,11 @@ ${platformGuide}
   const results = Object.fromEntries(settled.map((r) => [r.platform, r.text]));
   const errors = settled
     .filter((r) => r.error)
-    .map((r) => ({ platform: PLATFORM_MAP[r.platform] || r.platform, message: r.error }));
+    .map((r) => ({ platform: PLATFORM_MAP[r.platform] || r.platform, message: r.error, code: r.code }));
 
-  return { results, errors, model: modelId };
+  const balances = settled.filter((r) => typeof r.balance === 'number').map((r) => r.balance);
+  const balance = balances.length ? Math.min(...balances) : undefined;
+
+  return { results, errors, model: modelId, balance };
 }
 
-
-// ── الاستخدام المجاني بدون اشتراك (غير محدود) ─────────────────────────────
-// تمّت إزالة السقف اليومي — يمكن للمستخدم التوليد بدون اشتراك Pro.
-export function getFreeTierStatus() {
-  return { remaining: Infinity, used: 0, max: Infinity, canGenerate: true };
-}
-
-export function incrementUsage() {
-  const today = new Date().toDateString();
-  localStorage.setItem('qalami_last_gen_date', today);
-  const count = parseInt(localStorage.getItem('qalami_daily_count') || '0');
-  localStorage.setItem('qalami_daily_count', String(count + 1));
-}
