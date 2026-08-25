@@ -24,6 +24,8 @@ export default function App() {
           <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+
         </Routes>
         <Toaster richColors position="top-center" />
       </AuthProvider>
