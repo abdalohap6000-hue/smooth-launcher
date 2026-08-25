@@ -9,6 +9,8 @@ import Results from './pages/Results';
 import Premium from './pages/Premium';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
+
 
 export default function App() {
   return (
