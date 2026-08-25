@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft, LogOut } from "lucide-react";
 import BottomNav from "../components/qalami/BottomNav";
 import { AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from "../lib/generationService";
+import { fetchCredits, isAdmin, isModelLocked, toArabicDigits, FREE_MODEL } from "../lib/creditsService";
 import { toast } from "sonner";
 import { useAuth, signOut } from "@/hooks/useAuth";
 
@@ -22,6 +23,20 @@ export default function Settings() {
   const { user } = useAuth();
   const [toggles, setToggles] = useState({ reminders: true });
   const [model, setModel] = useState(getSelectedModel());
+  const [credits, setCredits] = useState(null);
+  const [admin, setAdmin] = useState(false);
+
+  useEffect(() => {
+    fetchCredits().then((c) => {
+      setCredits(c);
+      if (c && isModelLocked(getSelectedModel(), c.plan)) {
+        setModel(FREE_MODEL);
+        setSelectedModel(FREE_MODEL);
+      }
+    });
+    isAdmin().then(setAdmin);
+  }, []);
+
 
   const handleClick = (id) => {
     if (id === "share" && navigator.share) navigator.share({ title: "قلمي AI", url: window.location.origin });
