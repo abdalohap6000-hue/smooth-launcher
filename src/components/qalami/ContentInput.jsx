@@ -5,15 +5,16 @@ import ModelSelector from "./ModelSelector";
 
 const inspirations = ["منتج جديد 🛒", "نصيحة حياتية 💡", "إنجاز شخصي 🏆", "عرض لفترة محدودة ⚡", "سؤال للجمهور 🎤", "قصة نجاح 🌟"];
 
-export default function ContentInput({ value, onChange, model, onModelChange }) {
+export default function ContentInput({ value, onChange, model, onModelChange, plan = "free" }) {
   const [focused, setFocused] = useState(false);
 
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-3">
         <p className="text-xs font-bold text-white/40 uppercase tracking-widest">فكرتك</p>
-        <ModelSelector value={model} onChange={onModelChange} />
+        <ModelSelector value={model} onChange={onModelChange} plan={plan} />
       </div>
+
       <div className="relative rounded-2xl transition-all duration-300"
         style={{ background: "rgba(255,255,255,0.025)",
           border: `1.5px solid ${focused ? "rgba(124,77,255,0.55)" : "rgba(255,255,255,0.07)"}`,

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft, LogOut } from "lucide-react";
 import BottomNav from "../components/qalami/BottomNav";
 import { AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from "../lib/generationService";
+import { fetchCredits, isAdmin, isModelLocked, toArabicDigits, FREE_MODEL } from "../lib/creditsService";
 import { toast } from "sonner";
 import { useAuth, signOut } from "@/hooks/useAuth";
 
@@ -22,6 +23,20 @@ export default function Settings() {
   const { user } = useAuth();
   const [toggles, setToggles] = useState({ reminders: true });
   const [model, setModel] = useState(getSelectedModel());
+  const [credits, setCredits] = useState(null);
+  const [admin, setAdmin] = useState(false);
+
+  useEffect(() => {
+    fetchCredits().then((c) => {
+      setCredits(c);
+      if (c && isModelLocked(getSelectedModel(), c.plan)) {
+        setModel(FREE_MODEL);
+        setSelectedModel(FREE_MODEL);
+      }
+    });
+    isAdmin().then(setAdmin);
+  }, []);
+
 
   const handleClick = (id) => {
     if (id === "share" && navigator.share) navigator.share({ title: "قلمي AI", url: window.location.origin });
@@ -74,6 +89,33 @@ export default function Settings() {
         )}
 
 
+        {/* النقاط والاشتراك */}
+        <div className="px-4 py-4 rounded-2xl mb-3"
+             style={{ background: "rgba(255,215,0,0.05)", border: "1px solid rgba(255,215,0,0.2)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-white/80">⚡ النقاط والاشتراك</span>
+            <span className="text-xs font-black" style={{ color: credits?.plan === "pro" ? "#FFD700" : "rgba(255,255,255,0.5)" }}>
+              {credits?.plan === "pro" ? "Pro" : "مجاني"}
+            </span>
+          </div>
+          <p className="text-[12px] text-white/55">
+            الرصيد المتبقي: <b className="text-white/85">{toArabicDigits(credits?.balance ?? 0)}</b> نقطة
+          </p>
+          {credits?.renews_at && (
+            <p className="text-[11px] text-white/35 mt-1">
+              التجديد القادم: {new Date(credits.renews_at).toLocaleDateString("ar")}
+            </p>
+          )}
+          <p className="text-[11px] text-white/35 mt-2 leading-relaxed">
+            نقطة واحدة لكل منصة في كل عملية توليد. النموذج المجاني: Gemini 2.5 Flash Lite.
+          </p>
+          <button onClick={() => navigate("/premium")}
+            className="w-full mt-3 py-2.5 rounded-xl text-sm font-black text-black"
+            style={{ background: "linear-gradient(135deg, #FFD700, #FF6B35)" }}>
+            {credits?.plan === "pro" ? "إدارة الاشتراك" : "ترقية إلى Pro 👑"}
+          </button>
+        </div>
+
         {/* اختيار نموذج الذكاء الاصطناعي */}
         <div className="px-4 py-4 rounded-2xl mb-3"
              style={{ background: "rgba(124,77,255,0.06)", border: "1px solid rgba(124,77,255,0.2)" }}>
@@ -88,13 +130,28 @@ export default function Settings() {
             dir="rtl"
           >
             {AVAILABLE_MODELS.map((m) => (
-              <option key={m.id} value={m.id} className="bg-[#020203]">{m.label}</option>
+              <option key={m.id} value={m.id} disabled={isModelLocked(m.id, credits?.plan)} className="bg-[#020203]">
+                {m.label}{isModelLocked(m.id, credits?.plan) ? " 🔒 Pro" : ""}
+              </option>
             ))}
           </select>
           <p className="text-[11px] text-white/40 mt-2 leading-relaxed">
-            يُطبَّق النموذج فور اختياره على كل توليد جديد.
+            يُطبَّق النموذج فور اختياره على كل توليد جديد. النماذج المقفلة تحتاج اشتراك Pro.
           </p>
         </div>
+
+        {admin && (
+          <div onClick={() => navigate("/admin")}
+            className="flex items-center justify-between px-4 py-4 rounded-2xl mb-3 cursor-pointer"
+            style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="flex items-center gap-3">
+              <span className="text-base">🛠️</span>
+              <span className="text-sm font-semibold text-white/75">لوحة الأدمن — الاشتراكات</span>
+            </div>
+            <ChevronLeft className="w-4 h-4 text-white/20" />
+          </div>
+        )}
+
 
         {items.map((item, i) => {
           if (item.type === "divider") return <div key={item.id} className="my-3 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />;
