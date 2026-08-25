@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, BookMarked } from "lucide-react";
 import ResultCard from "../components/qalami/ResultCard";
 import BottomNav from "../components/qalami/BottomNav";
-import { generateContent, getFreeTierStatus, incrementUsage } from "../lib/generationService";
+import { generateContent } from "../lib/generationService";
+import { fetchCredits } from "../lib/creditsService";
 import { SavedPost } from "../lib/savedPostsService";
 import { toast } from "sonner";
 
@@ -20,29 +21,34 @@ export default function Results() {
     setData(JSON.parse(stored));
   }, [navigate]);
 
-  const handleRegenerate = async (platform) => {
-    if (!data) return;
-    if (!getFreeTierStatus().canGenerate) { navigate("/premium"); return; }
-    setRegeneratingPlatform(platform);
-    const results = await generateContent({ platforms: [platform], tone: data.tone, postType: data.postType, userInput: data.userInput });
-    incrementUsage();
+  const runRegenerate = async (platforms, tag) => {
+    const credits = await fetchCredits();
+    if (!credits || credits.balance < platforms.length) {
+      toast.error("رصيد النقاط غير كافٍ لإعادة التوليد");
+      navigate("/premium");
+      return;
+    }
+    setRegeneratingPlatform(tag);
+    const { results, errors } = await generateContent({
+      platforms, tone: data.tone, postType: data.postType, userInput: data.userInput, model: data.model,
+    });
+    if (errors.length) toast.error("فشل إعادة التوليد", { description: errors[0].message, duration: 8000 });
     const newData = { ...data, results: { ...data.results, ...results } };
     setData(newData);
     sessionStorage.setItem("qalami_results", JSON.stringify(newData));
     setRegeneratingPlatform(null);
   };
 
+  const handleRegenerate = async (platform) => {
+    if (!data) return;
+    await runRegenerate([platform], platform);
+  };
+
   const handleRegenerateAll = async () => {
     if (!data) return;
-    if (!getFreeTierStatus().canGenerate) { navigate("/premium"); return; }
-    setRegeneratingPlatform("all");
-    const results = await generateContent({ platforms: data.platforms, tone: data.tone, postType: data.postType, userInput: data.userInput });
-    incrementUsage();
-    const newData = { ...data, results };
-    setData(newData);
-    sessionStorage.setItem("qalami_results", JSON.stringify(newData));
-    setRegeneratingPlatform(null);
+    await runRegenerate(data.platforms, "all");
   };
+
 
   const handleSaveAll = async () => {
     if (!data) return;
