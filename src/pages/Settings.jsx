@@ -45,10 +45,16 @@ export default function Settings() {
 
   const handleModelChange = (e) => {
     const value = e.target.value;
+    if (isModelLocked(value, credits?.plan)) {
+      toast.error("هذا النموذج يتطلب اشتراك Pro");
+      navigate("/premium");
+      return;
+    }
     setModel(value);
     setSelectedModel(value);
     toast.success("تم تحديث النموذج");
   };
+
 
   const handleSignOut = async () => {
     await signOut();
