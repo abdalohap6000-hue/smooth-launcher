@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft, LogOut } from "lucide-react";
 import BottomNav from "../components/qalami/BottomNav";
-import { AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from "../lib/generationService";
-import { fetchCredits, isAdmin, isModelLocked, toArabicDigits, FREE_MODEL } from "../lib/creditsService";
+import { isAdmin } from "../lib/creditsService";
 import { toast } from "sonner";
 import { useAuth, signOut } from "@/hooks/useAuth";
 
@@ -22,18 +21,9 @@ export default function Settings() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [toggles, setToggles] = useState({ reminders: true });
-  const [model, setModel] = useState(getSelectedModel());
-  const [credits, setCredits] = useState(null);
   const [admin, setAdmin] = useState(false);
 
   useEffect(() => {
-    fetchCredits().then((c) => {
-      setCredits(c);
-      if (c && isModelLocked(getSelectedModel(), c.plan)) {
-        setModel(FREE_MODEL);
-        setSelectedModel(FREE_MODEL);
-      }
-    });
     isAdmin().then(setAdmin);
   }, []);
 
@@ -41,18 +31,6 @@ export default function Settings() {
   const handleClick = (id) => {
     if (id === "share" && navigator.share) navigator.share({ title: "قلمي AI", url: window.location.origin });
     if (id === "contact") window.location.href = "mailto:support@example.com?subject=تواصل معنا — قلمي AI";
-  };
-
-  const handleModelChange = (e) => {
-    const value = e.target.value;
-    if (isModelLocked(value, credits?.plan)) {
-      toast.error("هذا النموذج يتطلب اشتراك Pro");
-      navigate("/premium");
-      return;
-    }
-    setModel(value);
-    setSelectedModel(value);
-    toast.success("تم تحديث النموذج");
   };
 
 
