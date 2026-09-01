@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/i18n";
 
 export default function Splash() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -33,8 +35,8 @@ export default function Splash() {
           ✒️
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center space-y-1">
-          <h1 className="text-4xl font-black gradient-text-white">قلمي</h1>
-          <p className="text-sm text-white/30 font-light">مولّد محتوى عربي بالذكاء الاصطناعي</p>
+          <h1 className="text-4xl font-black gradient-text-white">{t("app_name")}</h1>
+          <p className="text-sm text-white/30 font-light">{t("app_tagline")}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="w-40">
           <div className="h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>

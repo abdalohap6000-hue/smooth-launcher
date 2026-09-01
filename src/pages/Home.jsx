@@ -10,11 +10,13 @@ import GenerateButton from "../components/qalami/GenerateButton";
 import CreditsPill from "../components/qalami/CreditsPill";
 import BottomNav from "../components/qalami/BottomNav";
 import { generateContent, getSelectedModel } from "../lib/generationService";
-import { fetchCredits, isModelLocked, FREE_MODEL, toArabicDigits } from "../lib/creditsService";
+import { fetchCredits, isModelLocked, FREE_MODEL } from "../lib/creditsService";
+import { useI18n } from "@/i18n";
 import { toast } from "sonner";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { t, fmt, dir } = useI18n();
   const [selectedPlatforms, setSelectedPlatforms] = useState([]);
   const [selectedTone, setSelectedTone] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -49,17 +51,17 @@ export default function Home() {
   const canGenerate = selectedPlatforms.length > 0 && selectedTone && selectedType && userInput.trim().length > 0;
 
   const handleGenerate = async () => {
-    if (!canGenerate) { toast.error("يرجى تعبئة جميع الحقول المطلوبة"); return; }
+    if (!canGenerate) { toast.error(t("fill_all")); return; }
 
     if (isModelLocked(model, plan)) {
-      toast.error("هذا النموذج يتطلب اشتراك Pro", { description: "اختر النموذج المجاني أو اشترك لفتح كل النماذج." });
+      toast.error(t("model_needs_pro"), { description: t("model_needs_pro_desc") });
       navigate("/premium");
       return;
     }
 
     if (balance < cost) {
-      toast.error(`رصيدك غير كافٍ — تحتاج ${toArabicDigits(cost)} نقطة ولديك ${toArabicDigits(balance)}`, {
-        description: "اشترك في Pro للحصول على باقة نقاط شهرية.",
+      toast.error(t("not_enough_credits", { cost: fmt(cost), balance: fmt(balance) }), {
+        description: t("not_enough_credits_desc"),
       });
       navigate("/premium");
       return;
@@ -75,7 +77,7 @@ export default function Home() {
     else fetchCredits().then((c) => c && setCredits(c));
 
     if (errors.length) {
-      toast.error(`فشل التوليد (${errors.map((e) => e.platform).join("، ")})`, {
+      toast.error(t("generation_failed", { platforms: errors.map((e) => t(`platform_${e.platform}`)).join("، ") }), {
         description: errors[0].message,
         duration: 8000,
       });
@@ -90,18 +92,18 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen font-cairo pb-28" style={{ background: "#020203" }} dir="rtl">
+    <div className="min-h-screen font-cairo pb-28" style={{ background: "#020203" }} dir={dir}>
       <div className="bg-orb w-[400px] h-[400px] top-[-100px] right-[-100px] opacity-[0.06]" style={{ background: "#7C4DFF" }} />
       <div className="glass-header sticky top-0 z-40">
         <div className="flex items-center justify-between px-5 py-3.5 max-w-lg mx-auto">
           <div className="flex items-center gap-2">
             <span className="text-xl">✒️</span>
-            <span className="text-lg font-black gradient-text-white">قلمي</span>
+            <span className="text-lg font-black gradient-text-white">{t("app_name")}</span>
           </div>
           <motion.button whileTap={{ scale: 0.92 }} onClick={() => navigate("/premium")}
             className="px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5"
             style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.25)", color: "#FFD700" }}>
-            👑 {plan === "pro" ? "Pro" : "ترقية"}
+            👑 {plan === "pro" ? "Pro" : t("upgrade")}
           </motion.button>
         </div>
       </div>
@@ -126,7 +128,7 @@ export default function Home() {
           <GenerateButton onClick={handleGenerate} isLoading={isLoading} disabled={!canGenerate} />
           {cost > 0 && (
             <p className="text-center text-[11px] mt-2 text-white/30 font-semibold">
-              تكلفة هذه العملية: {toArabicDigits(cost)} نقطة ({toArabicDigits(cost)} منصة)
+              {t("cost_line", { cost: fmt(cost) })}
             </p>
           )}
         </motion.div>
