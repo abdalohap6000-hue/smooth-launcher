@@ -1,16 +1,18 @@
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useI18n } from "@/i18n";
 
 const tabs = [
-  { path: "/home",     icon: "⚡", label: "إنشاء"   },
-  { path: "/history",  icon: "📚", label: "مكتبتي"  },
-  { path: "/premium",  icon: "👑", label: "Pro"      },
-  { path: "/settings", icon: "⚙️", label: "إعدادات" },
+  { path: "/home",     icon: "⚡", key: "nav_create"   },
+  { path: "/history",  icon: "📚", key: "nav_library"  },
+  { path: "/premium",  icon: "👑", key: "nav_pro"      },
+  { path: "/settings", icon: "⚙️", key: "nav_settings" },
 ];
 
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useI18n();
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50" style={{ width: "calc(100% - 32px)", maxWidth: "400px" }}>
       <div className="glass-nav flex items-center justify-around h-[60px] rounded-[20px] px-2"
@@ -30,7 +32,7 @@ export default function BottomNav() {
                 {tab.icon}
               </motion.span>
               <span className="text-[9px] font-bold relative z-10" style={{ color: isActive ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.25)" }}>
-                {tab.label}
+                {t(tab.key)}
               </span>
             </motion.button>
           );
