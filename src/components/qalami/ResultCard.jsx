@@ -14,7 +14,7 @@ const platformConfig = {
 };
 
 export default function ResultCard({ platform, content, index, onRegenerate }) {
-  const { t, dir } = useI18n();
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [isRegen, setIsRegen] = useState(false);
   const config = platformConfig[platform] || { color: "#7C4DFF", glow: "rgba(124,77,255,0.3)", bg: "#111", icon: "📝" };
