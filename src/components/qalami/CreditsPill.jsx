@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Zap, Crown } from "lucide-react";
-import { toArabicDigits } from "../../lib/creditsService";
+import { useI18n } from "@/i18n";
 
 export default function CreditsPill({ credits, loading }) {
   const navigate = useNavigate();
+  const { t, fmt } = useI18n();
   const balance = credits?.balance ?? 0;
   const isPro = credits?.plan === "pro";
   const isLow = balance <= 1;
@@ -22,12 +23,12 @@ export default function CreditsPill({ credits, loading }) {
     : "rgba(255,255,255,0.07)";
 
   const label = loading
-    ? "جارٍ تحميل رصيدك…"
+    ? t("credits_loading")
     : balance === 0
-    ? "انتهت نقاطك — اشترك للمتابعة 👑"
+    ? t("credits_empty")
     : isPro
-    ? `Pro — ${toArabicDigits(balance)} نقطة متبقية`
-    : `${toArabicDigits(balance)} نقاط مجانية متبقية`;
+    ? t("credits_pro", { n: fmt(balance) })
+    : t("credits_free", { n: fmt(balance) });
 
   return (
     <motion.button

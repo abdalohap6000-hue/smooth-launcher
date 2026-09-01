@@ -1,17 +1,14 @@
 import { motion } from "framer-motion";
+import { useI18n } from "@/i18n";
 
-export const LENGTHS = [
-  { id: "short", label: "قصير", hint: "≈ ٥٠ كلمة" },
-  { id: "medium", label: "متوسط", hint: "≈ ١٥٠ كلمة" },
-  { id: "long", label: "طويل", hint: "≈ ٣٠٠ كلمة" },
-];
+export const LENGTHS = [{ id: "short" }, { id: "medium" }, { id: "long" }];
 
 export const LANGUAGES = [
-  { id: "ar", label: "العربية", flag: "🇸🇦" },
-  { id: "ar_eg", label: "عربي مصري", flag: "🇪🇬" },
-  { id: "ar_gulf", label: "عربي خليجي", flag: "🇦🇪" },
-  { id: "en", label: "English", flag: "🇺🇸" },
-  { id: "fr", label: "Français", flag: "🇫🇷" },
+  { id: "ar", flag: "🇸🇦" },
+  { id: "ar_eg", flag: "🇪🇬" },
+  { id: "ar_gulf", flag: "🇦🇪" },
+  { id: "en", flag: "🇺🇸" },
+  { id: "fr", flag: "🇫🇷" },
 ];
 
 function Pill({ active, color, onClick, children }) {
@@ -33,24 +30,26 @@ function Pill({ active, color, onClick, children }) {
 }
 
 export default function LengthLanguageSelector({ length, onLengthChange, language, onLanguageChange }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">طول النص</p>
+        <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">{t("section_length")}</p>
         <div className="flex flex-wrap gap-2">
           {LENGTHS.map((l) => (
             <Pill key={l.id} active={length === l.id} color="#38BDF8" onClick={() => onLengthChange(l.id)}>
-              {l.label} <span className="opacity-60 text-[10px] font-semibold mr-1">{l.hint}</span>
+              {t(`length_${l.id}`)}{" "}
+              <span className="opacity-60 text-[10px] font-semibold">{t(`length_${l.id}_hint`)}</span>
             </Pill>
           ))}
         </div>
       </div>
       <div>
-        <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">اللغة</p>
+        <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">{t("section_language")}</p>
         <div className="flex flex-wrap gap-2">
           {LANGUAGES.map((lg) => (
             <Pill key={lg.id} active={language === lg.id} color="#A78BFA" onClick={() => onLanguageChange(lg.id)}>
-              <span className="mr-1">{lg.flag}</span> {lg.label}
+              <span>{lg.flag}</span> {t(`content_lang_${lg.id}`)}
             </Pill>
           ))}
         </div>

@@ -5,11 +5,23 @@ import { useNavigate } from "react-router-dom";
 import GeminiLogo from "./GeminiLogo";
 import { AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from "../../lib/generationService";
 import { isModelLocked } from "../../lib/creditsService";
+import { useI18n } from "@/i18n";
 
 const TIER_STYLE = {
   lite: { color: "#9CA3AF", bg: "rgba(156,163,175,0.12)" },
   flash: { color: "#38BDF8", bg: "rgba(56,189,248,0.12)" },
   pro: { color: "#FFD700", bg: "rgba(255,215,0,0.12)" },
+};
+
+// وصف كل نموذج كمفتاح ترجمة
+const DESC_KEY = {
+  "google/gemini-2.5-flash-lite": "tier_lite",
+  "google/gemini-3.1-flash-lite": "tier_lite_2",
+  "google/gemini-2.5-flash": "tier_balanced",
+  "google/gemini-3.5-flash": "tier_fast_adv",
+  "google/gemini-3-flash-preview": "tier_default",
+  "google/gemini-2.5-pro": "tier_high_quality",
+  "google/gemini-3.1-pro-preview": "tier_strongest",
 };
 
 export default function ModelSelector({ value, onChange, plan = "free" }) {
@@ -18,6 +30,7 @@ export default function ModelSelector({ value, onChange, plan = "free" }) {
   const model = value || internal;
   const ref = useRef(null);
   const navigate = useNavigate();
+  const { t, dir } = useI18n();
 
   useEffect(() => {
     const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -33,7 +46,7 @@ export default function ModelSelector({ value, onChange, plan = "free" }) {
   };
 
   return (
-    <div className="relative" ref={ref} dir="rtl">
+    <div className="relative" ref={ref} dir={dir}>
       <motion.button
         whileTap={{ scale: 0.96 }}
         onClick={() => setOpen((o) => !o)}
@@ -52,7 +65,7 @@ export default function ModelSelector({ value, onChange, plan = "free" }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 mt-2 w-[268px] rounded-2xl overflow-hidden z-50 p-1"
+            className={`absolute ${dir === "rtl" ? "left-0" : "right-0"} mt-2 w-[268px] rounded-2xl overflow-hidden z-50 p-1`}
             style={{
               background: "rgba(10,10,14,0.97)",
               border: "1px solid rgba(255,255,255,0.09)",
@@ -68,14 +81,14 @@ export default function ModelSelector({ value, onChange, plan = "free" }) {
                 <button
                   key={m.id}
                   onClick={() => pick(m.id)}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-right transition-colors hover:bg-white/[0.05]"
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl ${dir === "rtl" ? "text-right" : "text-left"} transition-colors hover:bg-white/[0.05]`}
                   style={{ background: active ? "rgba(124,77,255,0.12)" : "transparent", opacity: locked ? 0.55 : 1 }}
                 >
                   <GeminiLogo size={16} />
                   <span className="flex-1 min-w-0">
                     <span className="block text-[12px] font-bold text-white/85 truncate">{m.label}</span>
                     <span className="block text-[10px] text-white/35 truncate">
-                      {locked ? "يتطلب اشتراك Pro" : m.desc}
+                      {locked ? t("model_requires_pro") : t(DESC_KEY[m.id] || "tier_balanced")}
                     </span>
                   </span>
                   {locked ? (

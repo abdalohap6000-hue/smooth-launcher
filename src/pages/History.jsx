@@ -6,14 +6,17 @@ import moment from "moment";
 import { toast } from "sonner";
 import BottomNav from "../components/qalami/BottomNav";
 import { SavedPost } from "../lib/savedPostsService";
+import { useI18n } from "@/i18n";
 
-const platformConfig = {
-  instagram: { label: "إنستغرام", color: "#E4405F" },
-  tiktok:    { label: "تيك توك",  color: "#00EAFF" },
-  twitter:   { label: "X",        color: "#E7E9EA" },
+const platformColors = {
+  instagram: "#E4405F",
+  tiktok: "#00EAFF",
+  twitter: "#E7E9EA",
+  youtube: "#FF0000",
+  snapchat: "#FFFC00",
 };
 
-function groupByDate(posts) {
+function groupByDate(posts, t) {
   const groups = {};
   const today = moment().startOf("day");
   const yesterday = moment().subtract(1, "day").startOf("day");
@@ -21,9 +24,9 @@ function groupByDate(posts) {
   posts.forEach((post) => {
     const date = moment(post.created_date);
     let key;
-    if (date.isSameOrAfter(today)) key = "اليوم";
-    else if (date.isSameOrAfter(yesterday)) key = "أمس";
-    else if (date.isSameOrAfter(weekAgo)) key = "هذا الأسبوع";
+    if (date.isSameOrAfter(today)) key = t("today");
+    else if (date.isSameOrAfter(yesterday)) key = t("yesterday");
+    else if (date.isSameOrAfter(weekAgo)) key = t("this_week");
     else key = date.format("YYYY/MM/DD");
     if (!groups[key]) groups[key] = [];
     groups[key].push(post);
@@ -33,6 +36,7 @@ function groupByDate(posts) {
 
 export default function History() {
   const navigate = useNavigate();
+  const { t, dir } = useI18n();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingPost, setViewingPost] = useState(null);
@@ -49,17 +53,17 @@ export default function History() {
   const handleDelete = async (id) => {
     await SavedPost.delete(id);
     setPosts((prev) => prev.filter((p) => p.id !== id));
-    toast.success("تم الحذف");
+    toast.success(t("deleted"));
   };
 
-  const groups = groupByDate(posts);
-  const cfg = (platform) => platformConfig[platform] || { label: platform, color: "#7C4DFF" };
+  const groups = groupByDate(posts, t);
+  const cfg = (platform) => ({ color: platformColors[platform] || "#7C4DFF", label: t(`platform_${platform}`) });
 
   return (
-    <div className="min-h-screen font-cairo pb-28" style={{ background: "#020203" }} dir="rtl">
+    <div className="min-h-screen font-cairo pb-28" style={{ background: "#020203" }} dir={dir}>
       <div className="glass-header sticky top-0 z-40">
         <div className="px-5 py-4 max-w-lg mx-auto">
-          <h1 className="text-xl font-black gradient-text-white">مكتبتي 📚</h1>
+          <h1 className="text-xl font-black gradient-text-white">{t("library_title")}</h1>
         </div>
       </div>
       <div className="max-w-lg mx-auto px-5 pt-5 relative z-10">
@@ -70,8 +74,8 @@ export default function History() {
         ) : posts.length === 0 ? (
           <div className="text-center py-20 space-y-4">
             <div className="text-5xl">📖</div>
-            <h2 className="text-lg font-bold text-white/70">مكتبتك فارغة بعد</h2>
-            <button onClick={() => navigate("/home")} className="btn-generate-bg text-white font-bold px-6 py-3 rounded-2xl text-sm">ولّد أول منشور ✨</button>
+            <h2 className="text-lg font-bold text-white/70">{t("library_empty")}</h2>
+            <button onClick={() => navigate("/home")} className="btn-generate-bg text-white font-bold px-6 py-3 rounded-2xl text-sm">{t("library_cta")}</button>
           </div>
         ) : (
           <div className="space-y-6">
@@ -94,7 +98,7 @@ export default function History() {
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
                           </button>
                         </div>
-                        <p className="text-sm text-white/65 line-clamp-2 leading-relaxed" dir="rtl">{post.content}</p>
+                        <p className="text-sm text-white/65 line-clamp-2 leading-relaxed" dir="auto">{post.content}</p>
                       </motion.div>
                     );
                   })}
@@ -114,12 +118,12 @@ export default function History() {
               className="rounded-2xl p-5 w-full max-w-lg max-h-[80vh] overflow-auto"
               style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${cfg(viewingPost.platform).color}30` }}
               onClick={(e) => e.stopPropagation()}>
-              <p className="text-sm text-white/80 leading-[1.9] whitespace-pre-wrap mb-5" dir="rtl">{viewingPost.content}</p>
+              <p className="text-sm text-white/80 leading-[1.9] whitespace-pre-wrap mb-5" dir="auto">{viewingPost.content}</p>
               <div className="flex gap-2">
-                <button onClick={() => { navigator.clipboard.writeText(viewingPost.content); toast.success("تم النسخ!"); }}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold btn-generate-bg text-white">📋 نسخ</button>
+                <button onClick={() => { navigator.clipboard.writeText(viewingPost.content); toast.success(t("copied_toast")); }}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold btn-generate-bg text-white">📋 {t("copy")}</button>
                 <button onClick={() => setViewingPost(null)} className="flex-1 py-3 rounded-xl text-sm font-semibold text-white/40"
-                  style={{ border: "1px solid rgba(255,255,255,0.07)" }}>إغلاق</button>
+                  style={{ border: "1px solid rgba(255,255,255,0.07)" }}>{t("close")}</button>
               </div>
             </motion.div>
           </motion.div>

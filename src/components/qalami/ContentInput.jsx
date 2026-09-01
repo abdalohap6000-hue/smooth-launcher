@@ -2,16 +2,18 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import ModelSelector from "./ModelSelector";
+import { useI18n } from "@/i18n";
 
-const inspirations = ["منتج جديد 🛒", "نصيحة حياتية 💡", "إنجاز شخصي 🏆", "عرض لفترة محدودة ⚡", "سؤال للجمهور 🎤", "قصة نجاح 🌟"];
+const inspirations = ["insp_product", "insp_tip", "insp_achievement", "insp_offer", "insp_question", "insp_story"];
 
 export default function ContentInput({ value, onChange, model, onModelChange, plan = "free" }) {
   const [focused, setFocused] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-xs font-bold text-white/40 uppercase tracking-widest">فكرتك</p>
+        <p className="text-xs font-bold text-white/40 uppercase tracking-widest">{t("section_idea")}</p>
         <ModelSelector value={model} onChange={onModelChange} plan={plan} />
       </div>
 
@@ -21,8 +23,8 @@ export default function ContentInput({ value, onChange, model, onModelChange, pl
           boxShadow: focused ? "0 0 0 4px rgba(124,77,255,0.1)" : "none" }}>
         <textarea value={value} onChange={(e) => e.target.value.length <= 200 && onChange(e.target.value)}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          placeholder="اكتب فكرتك هنا… مثال: أريد الترويج لكورسي الجديد في التصميم"
-          dir="rtl" rows={4}
+          placeholder={t("idea_placeholder")}
+          dir="auto" rows={4}
           className="w-full bg-transparent resize-none text-sm text-white/85 placeholder-white/20 p-4 pb-2 outline-none leading-relaxed" />
         <div className="flex items-center justify-between px-4 pb-3">
           <span className="text-[11px] font-semibold" style={{ color: value.length > 180 ? "#F87171" : "rgba(255,255,255,0.2)" }}>
@@ -37,13 +39,16 @@ export default function ContentInput({ value, onChange, model, onModelChange, pl
         </div>
       </div>
       <div className="flex flex-wrap gap-2 mt-3">
-        {inspirations.map((chip) => (
-          <button key={chip} onClick={() => onChange(chip.split(" ")[0])}
-            className="px-3 py-1 rounded-full text-[11px] font-semibold transition-all hover:text-white/60"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.3)" }}>
-            {chip}
-          </button>
-        ))}
+        {inspirations.map((key) => {
+          const chip = t(key);
+          return (
+            <button key={key} onClick={() => onChange(chip.replace(/\s*\p{Extended_Pictographic}.*$/u, "").trim())}
+              className="px-3 py-1 rounded-full text-[11px] font-semibold transition-all hover:text-white/60"
+              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.3)" }}>
+              {chip}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
