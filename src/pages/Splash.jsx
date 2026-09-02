@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/i18n";
+import appIcon from "@/assets/app-icon.png.asset.json";
 
 export default function Splash() {
   const navigate = useNavigate();
@@ -30,9 +31,9 @@ export default function Splash() {
       <div className="bg-orb w-[500px] h-[500px] top-[-100px] left-1/2 -translate-x-1/2 opacity-[0.08]" style={{ background: "radial-gradient(circle, #7C4DFF, #3B82F6)" }} />
       <div className="relative z-10 flex flex-col items-center gap-6">
         <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="w-24 h-24 rounded-[28px] flex items-center justify-center text-5xl"
-          style={{ background: "linear-gradient(135deg, rgba(124,77,255,0.3), rgba(59,130,246,0.2))", border: "1px solid rgba(124,77,255,0.3)", boxShadow: "0 0 40px rgba(124,77,255,0.3)" }}>
-          ✒️
+          className="w-24 h-24 rounded-[28px] overflow-hidden"
+          style={{ border: "1px solid rgba(124,77,255,0.3)", boxShadow: "0 0 40px rgba(124,77,255,0.3)" }}>
+          <img src={appIcon.url} alt="Qalami AI" className="w-full h-full object-cover" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center space-y-1">
           <h1 className="text-4xl font-black gradient-text-white">{t("app_name")}</h1>
