@@ -12,6 +12,7 @@ import BottomNav from "../components/qalami/BottomNav";
 import { generateContent, getSelectedModel } from "../lib/generationService";
 import { fetchCredits, isModelLocked, FREE_MODEL } from "../lib/creditsService";
 import { useI18n } from "@/i18n";
+import appIcon from "@/assets/app-icon-small.png.asset.json";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -97,7 +98,7 @@ export default function Home() {
       <div className="glass-header sticky top-0 z-40">
         <div className="flex items-center justify-between px-5 py-3.5 max-w-lg mx-auto">
           <div className="flex items-center gap-2">
-            <span className="text-xl">✒️</span>
+            <img src={appIcon.url} alt="Qalami AI" className="w-7 h-7 rounded-lg" />
             <span className="text-lg font-black gradient-text-white">{t("app_name")}</span>
           </div>
           <motion.button whileTap={{ scale: 0.92 }} onClick={() => navigate("/premium")}
