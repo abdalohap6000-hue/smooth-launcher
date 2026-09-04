@@ -31,6 +31,7 @@ export default function Settings() {
   const handleClick = (id) => {
     if (id === "share" && navigator.share) navigator.share({ title: "Qalami AI", url: window.location.origin });
     if (id === "contact") window.location.href = "mailto:support@example.com?subject=Qalami AI";
+    if (id === "privacy") window.open("https://sites.google.com/view/qalamil", "_blank", "noopener,noreferrer");
   };
 
   const changeLang = (next) => {
