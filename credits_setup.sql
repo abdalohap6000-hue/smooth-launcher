@@ -207,10 +207,23 @@ end;
 $$;
 
 -- الدوال الحساسة تعمل من الخادم فقط
-revoke execute on function public.consume_credits(uuid, integer, text) from anon, authenticated;
-revoke execute on function public.refund_credits(uuid, integer, text) from anon, authenticated;
-revoke execute on function public.grant_subscription(uuid, text, integer, integer) from anon, authenticated;
-revoke execute on function public.renew_credits(uuid) from anon, authenticated;
+-- ملاحظة: PostgreSQL يمنح EXECUTE افتراضيًا لدور PUBLIC، لذا يجب سحبها منه أيضًا.
+revoke execute on function public.consume_credits(uuid, integer, text) from public, anon, authenticated;
+revoke execute on function public.refund_credits(uuid, integer, text) from public, anon, authenticated;
+revoke execute on function public.grant_subscription(uuid, text, integer, integer) from public, anon, authenticated;
+revoke execute on function public.renew_credits(uuid) from public, anon, authenticated;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+grant execute on function public.consume_credits(uuid, integer, text) to service_role;
+grant execute on function public.refund_credits(uuid, integer, text) to service_role;
+grant execute on function public.grant_subscription(uuid, text, integer, integer) to service_role;
+grant execute on function public.renew_credits(uuid) to service_role;
+
+-- has_role: للمستخدمين المسجّلين والخادم فقط (تُستخدم في سياسات RLS و Edge Functions)
+revoke execute on function public.has_role(uuid, public.app_role) from public, anon;
+grant execute on function public.has_role(uuid, public.app_role) to authenticated, service_role;
+
+-- منع منح EXECUTE تلقائيًا لأي دالة جديدة مستقبلًا
+alter default privileges in schema public revoke execute on functions from public;
 
 -- 9) عيّن نفسك أدمن (بدّل البريد) -------------------------------------------
 -- insert into public.user_roles (user_id, role)
