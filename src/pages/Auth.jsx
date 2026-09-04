@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useI18n } from "@/i18n";
-import appIcon from "@/assets/app-icon-small.png.asset.json";
+
+const APP_ICON = "/icon-192.png";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ export default function AuthPage() {
         style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
 
         <div className="text-center space-y-1">
-          <img src={appIcon.url} alt="Qalami AI" className="w-16 h-16 rounded-2xl mx-auto mb-2" style={{ boxShadow: "0 0 30px rgba(124,77,255,0.3)" }} />
+          <img src={APP_ICON} alt="Qalami AI" className="w-16 h-16 rounded-2xl mx-auto mb-2" style={{ boxShadow: "0 0 30px rgba(124,77,255,0.3)" }} />
           <h1 className="text-2xl font-black gradient-text-white">{t("app_name")}</h1>
           <p className="text-xs text-white/40">
             {mode === "signin" ? t("auth_signin_sub") : t("auth_signup_sub")}

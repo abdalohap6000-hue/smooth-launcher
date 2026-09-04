@@ -1,0 +1,2 @@
+- [Standalone asset portability](standalone-assets.md) — imported hosted asset URLs may not resolve outside their original platform; prefer equivalent local files.
+- [Dependency resolution](dependency-resolution.md) — package installation can rewrite ranges and downgrade lockfile resolutions; inspect and audit afterward.
