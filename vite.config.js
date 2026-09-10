@@ -12,5 +12,8 @@ export default defineConfig({
     port: 5000,
     strictPort: true,
     allowedHosts: true,
+    watch: {
+      ignored: ['**/.cache/**', '**/artifacts/**', '**/node_modules/**'],
+    },
   },
 });

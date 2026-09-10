@@ -17,6 +17,7 @@
         "sonner": "^2.0.1",
       },
       "devDependencies": {
+        "@replit/connectors-sdk": "^0.4.3",
         "@vitejs/plugin-react": "^4.7.0",
         "autoprefixer": "^10.4.27",
         "postcss": "^8.5.23",
@@ -139,6 +140,8 @@
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@nodelib/fs.walk/-/fs.walk-1.2.8.tgz", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
 
     "@remix-run/router": ["@remix-run/router@1.23.4", "http://package-firewall.replit.local/npm/@remix-run/router/-/router-1.23.4.tgz", {}, "sha512-q7j5geK7xs3UJSdm9/iytUNclBnLmYx1EnSeCFXHPeutdqgIMeFeHtUZgS3EhlKxdBEAu8OwtJCwmLrEzpSs7Q=="],
+
+    "@replit/connectors-sdk": ["@replit/connectors-sdk@0.4.3", "http://package-firewall.replit.internal/npm/@replit/connectors-sdk/-/connectors-sdk-0.4.3.tgz", {}, "sha512-7XoaRty/O6JF161UkVBI8UewZ96XCNNN1kRvT9Q41IRH3xr+6ImylvXtirIghydDd2FCQvIkY4HQscOOr45otA=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.27", "http://package-firewall.replit.local/npm/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.27.tgz", {}, "sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA=="],
 
