@@ -13,7 +13,7 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     watch: {
-      ignored: ['**/.cache/**', '**/artifacts/**', '**/node_modules/**'],
+      ignored: ['**/.cache/**', '**/.local/**', '**/artifacts/**', '**/node_modules/**'],
     },
   },
 });

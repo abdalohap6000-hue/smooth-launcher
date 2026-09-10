@@ -1,7 +1,45 @@
-modules = ["nodejs-20", "web"]
+modules = ["nodejs-20", "web", "bun-1.3"]
 
 [nix]
 channel = "stable-25_05"
 
 [agent]
 expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bun run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+EXPO_PUBLIC_REVENUECAT_API_KEY = "test_MuDudTtPiFXiGDlXKxllGvThZFu"
+EXPO_PUBLIC_REVENUECAT_ENTITLEMENT = "premium"
+REVENUECAT_PROJECT_ID = "proj68b8ae90"
+VITE_SUPABASE_URL = "https://mpuwuwkaclsnjdoqnpad.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdXd1d2thY2xzbmpkb3FucGFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NDk1MzAsImV4cCI6MjA5OTUyNTUzMH0.7D_XYChgZk2Llnzdcl6vVIyUW3njfwUudLsgsivC8hs"
+VITE_SUPABASE_PROJECT_ID = "mpuwuwkaclsnjdoqnpad"
