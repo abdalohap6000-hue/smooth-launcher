@@ -32,7 +32,20 @@ return [platform, data.content[0].text];
 ```
 
 ## بوابة الدفع
-تم ربط Lemon Squeezy مسبقاً في `src/pages/Premium.jsx` — استبدل الروابط برواباطك.
+تم ربط خطتي Lemon Squeezy الفعليتين في `src/pages/Premium.jsx`:
+
+- الشهري: `https://imagineal.lemonsqueezy.com/checkout/buy/fc74f7a5-475a-400f-a106-4004088743c7`
+- السنوي: `https://imagineal.lemonsqueezy.com/checkout/buy/e91fa95f-213a-428f-84e2-25ac341c8ab5`
+
+يمكن استبدال الرابطين عند الحاجة باستخدام `VITE_LEMON_SQUEEZY_MONTHLY_URL` و
+`VITE_LEMON_SQUEEZY_YEARLY_URL`. يجب أن يكون الرابطان روابط Checkout من Lemon
+Squeezy بصيغة `https://<store>.lemonsqueezy.com/checkout/...`؛ إذا غاب رابط أو
+كان غير صالح، يتعطل زر الشراء لهذه الخطة بدلاً من فتح رابط مكسور.
+
+لإرجاع المستخدم بعد الدفع، اضبط `redirect_url` في إعدادات كل Checkout إلى:
+`https://<نطاق-التطبيق>/premium?checkout=success`
+تتعرف صفحة Premium على حالتي `checkout=success` و`checkout=cancelled`، ثم تنظف
+معامل الحالة من العنوان حتى لا تظهر رسالة النجاح مجدداً عند تحديث الصفحة.
 
 ## التخزين
 المكتبة تستخدم `localStorage` بدلاً من قاعدة بيانات خارجية.

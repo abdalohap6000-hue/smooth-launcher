@@ -110,6 +110,9 @@ export const translations = {
     best_value: "الأوفر 🏆",
     save_50: "وفّر ٥٠٪",
     subscribe_now: "🚀 اشترك الآن — {price}",
+    checkout_success: "تم استلام الدفع. سيتم تفعيل اشتراكك ونقاطك قريباً.",
+    checkout_cancelled: "تم إلغاء عملية الدفع. يمكنك اختيار خطة أخرى والمحاولة مجدداً.",
+    checkout_unavailable: "الدفع لهذه الخطة غير متاح حالياً. يرجى اختيار خطة أخرى.",
     checkout_note: "بعد إتمام الدفع يتم تفعيل باقة النقاط على حسابك خلال وقت قصير.",
     checkout_note_2: "إن تأخر التفعيل راسلنا بالبريد المستخدم في الدفع.",
 
@@ -291,6 +294,9 @@ export const translations = {
     best_value: "Best value 🏆",
     save_50: "Save 50%",
     subscribe_now: "🚀 Subscribe now — {price}",
+    checkout_success: "Payment received. Your subscription and credits will be activated shortly.",
+    checkout_cancelled: "Checkout was cancelled. You can choose a plan and try again.",
+    checkout_unavailable: "Checkout is currently unavailable for this plan. Please choose another plan.",
     checkout_note: "Your credit pack is activated shortly after payment.",
     checkout_note_2: "If activation is delayed, email us from the address used at checkout.",
 

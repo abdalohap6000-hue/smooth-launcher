@@ -3,18 +3,49 @@ import { useEffect, useState } from "react";
 import BottomNav from "../components/qalami/BottomNav";
 import { fetchCredits, PRO_MONTHLY_CREDITS, SIGNUP_CREDITS } from "../lib/creditsService";
 import { useI18n } from "@/i18n";
+import { useSearchParams } from "react-router-dom";
 
-const MONTHLY_URL = "https://imagineal.lemonsqueezy.com/checkout/buy/fc74f7a5-475a-400f-a106-4004088743c7";
-const YEARLY_URL  = "https://imagineal.lemonsqueezy.com/checkout/buy/e91fa95f-213a-428f-84e2-25ac341c8ab5";
+const CHECKOUT_URLS = {
+  monthly: import.meta.env.VITE_LEMON_SQUEEZY_MONTHLY_URL
+    || "https://imagineal.lemonsqueezy.com/checkout/buy/fc74f7a5-475a-400f-a106-4004088743c7",
+  yearly: import.meta.env.VITE_LEMON_SQUEEZY_YEARLY_URL
+    || "https://imagineal.lemonsqueezy.com/checkout/buy/e91fa95f-213a-428f-84e2-25ac341c8ab5",
+};
 
+function getCheckoutUrl(plan) {
+  const configuredUrl = CHECKOUT_URLS[plan];
+  if (!configuredUrl) return null;
 
+  try {
+    const url = new URL(configuredUrl);
+    const isLemonSqueezyCheckout = url.protocol === "https:"
+      && url.hostname.endsWith(".lemonsqueezy.com")
+      && url.pathname.includes("/checkout/");
+    return isLemonSqueezyCheckout ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Premium() {
   const { t, fmt, dir } = useI18n();
   const [selectedPlan, setSelectedPlan] = useState("yearly");
   const [credits, setCredits] = useState(null);
+  const [checkoutState, setCheckoutState] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => { fetchCredits().then(setCredits); }, []);
+
+  useEffect(() => {
+    const status = searchParams.get("checkout");
+    if (status !== "success" && status !== "cancelled") return;
+
+    setCheckoutState(status);
+    const cleanedParams = new URLSearchParams(searchParams);
+    cleanedParams.delete("checkout");
+    cleanedParams.delete("plan");
+    setSearchParams(cleanedParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const isPro = credits?.plan === "pro";
 
@@ -25,10 +56,11 @@ export default function Premium() {
 
   const monthlyPrice = `${fmt("4.99")}$`;
   const yearlyPrice = `${fmt("29.99")}$`;
+  const checkoutUrl = getCheckoutUrl(selectedPlan);
 
   const handleCheckout = () => {
-    const url = selectedPlan === "monthly" ? MONTHLY_URL : YEARLY_URL;
-    window.open(url, "_blank");
+    if (!checkoutUrl) return;
+    window.open(checkoutUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -48,6 +80,19 @@ export default function Premium() {
             <span className="text-sm font-black" style={{ color: isPro ? "#FFD700" : "#FFFFFFB3" }}>
               {t("balance_line", { n: fmt(credits.balance), plan: isPro ? t("plan_pro") : t("plan_free") })}
             </span>
+          </div>
+        )}
+
+        {checkoutState === "success" && (
+          <div className="rounded-2xl px-4 py-3 mb-6 text-sm font-semibold text-green-300"
+            style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)" }}>
+            {t("checkout_success")}
+          </div>
+        )}
+        {checkoutState === "cancelled" && (
+          <div className="rounded-2xl px-4 py-3 mb-6 text-sm font-semibold text-white/60"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            {t("checkout_cancelled")}
           </div>
         )}
 
@@ -80,9 +125,16 @@ export default function Premium() {
           ))}
         </div>
 
+        {!checkoutUrl && (
+          <div className="rounded-2xl px-4 py-3 mb-4 text-center text-xs font-semibold text-orange-200"
+            style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)" }}>
+            {t("checkout_unavailable")}
+          </div>
+        )}
         <motion.button whileTap={{ scale: 0.97 }} onClick={handleCheckout}
+          disabled={!checkoutUrl}
           className="w-full h-[62px] rounded-2xl text-lg font-black text-black flex items-center justify-center btn-generate"
-          style={{ background: "linear-gradient(135deg, #FFD700, #FF6B35)" }}>
+          style={{ background: "linear-gradient(135deg, #FFD700, #FF6B35)", opacity: checkoutUrl ? 1 : 0.45, cursor: checkoutUrl ? "pointer" : "not-allowed" }}>
           {t("subscribe_now", { price: selectedPlan === "monthly" ? `${monthlyPrice} ${t("per_month")}` : `${yearlyPrice} ${t("per_year")}` })}
         </motion.button>
         <p className="text-center text-xs text-white/20 mt-3 leading-relaxed">
