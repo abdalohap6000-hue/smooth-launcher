@@ -31,9 +31,13 @@ jobs:
       - name: تنصيب المكتبات
         run: npm install
 
-      # 5) يربط المشروع بحساب Expo وينشئه لو ما كان موجود (مرة وحدة بس تحتاجها)
-      - name: ربط المشروع بـ Expo
+      # 5) يطلب من Expo يبني ملف APK فعلياً
+      #    --non-interactive: عشان ما ينتظر منك أي إجابة يدوية
+      #    --no-wait: يبدأ البناء ويخلص المهمة بدون ما ينتظر (تتابعه من موقع Expo)
+      - name: طلب البناء من Expo
         env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas build --platform android --profile preview --non-interactive --no-wait
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas init --non-interactive --force
 
