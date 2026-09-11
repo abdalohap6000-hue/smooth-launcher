@@ -1,0 +1,40 @@
+name: بناء تطبيق أندرويد
+
+# هذا الملف يشتغل تلقائياً كل ما تضغط على الزر يدوياً من تبويب Actions في GitHub
+on:
+  workflow_dispatch:   # يضيف زر "Run workflow" يدوي في GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # كل الأوامر هنا تصير داخل مجلد تطبيق الجوال فقط
+    defaults:
+      run:
+        working-directory: artifacts/qalami-ai-mobile
+
+    steps:
+      # 1) يجيب نسخة من الكود بتاعك
+      - name: تحميل الكود
+        uses: actions/checkout@v4
+
+      # 2) يجهز Node.js (اللغة اللي المشروع مبني فيها)
+      - name: تجهيز Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3) ينصب أداة EAS (المسؤولة عن طلب البناء من Expo)
+      - name: تنصيب أداة EAS
+        run: npm install -g eas-cli
+
+      # 4) ينصب مكتبات المشروع
+      - name: تنصيب المكتبات
+        run: npm install
+
+      # 5) يطلب من Expo يبني ملف APK فعلياً
+      #    --non-interactive: عشان ما ينتظر منك أي إجابة يدوية
+      #    --no-wait: يبدأ البناء ويخلص المهمة بدون ما ينتظر (تتابعه من موقع Expo)
+      - name: طلب البناء من Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas build --platform android --profile preview --non-interactive --no-wait
