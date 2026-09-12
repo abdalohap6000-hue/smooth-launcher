@@ -8,12 +8,9 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
-    host: '0.0.0.0',
-    port: 5000,
+    host: '::',
+    port: 8080,
     strictPort: true,
     allowedHosts: true,
-    watch: {
-      ignored: ['**/.cache/**', '**/.local/**', '**/artifacts/**', '**/node_modules/**'],
-    },
   },
 });
