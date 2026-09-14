@@ -19,11 +19,19 @@ export default function Results() {
 
   useEffect(() => {
     const stored = sessionStorage.getItem("qalami_results");
-    if (!stored) { navigate("/home"); return; }
-    setData(JSON.parse(stored));
+    if (!stored) { navigate("/home", { replace: true }); return; }
+    try {
+      const parsed = JSON.parse(stored);
+      if (!parsed || !Array.isArray(parsed.platforms) || !parsed.results) throw new Error("bad shape");
+      setData(parsed);
+    } catch {
+      sessionStorage.removeItem("qalami_results");
+      navigate("/home", { replace: true });
+    }
   }, [navigate]);
 
   const runRegenerate = async (platforms, tag) => {
+    if (regeneratingPlatform) return;
     const credits = await fetchCredits();
     if (!credits || credits.balance < platforms.length) {
       toast.error(t("regen_no_credits"));
@@ -31,14 +39,25 @@ export default function Results() {
       return;
     }
     setRegeneratingPlatform(tag);
-    const { results, errors } = await generateContent({
-      platforms, tone: data.tone, postType: data.postType, userInput: data.userInput, model: data.model,
-    });
-    if (errors.length) toast.error(t("regen_failed"), { description: errors[0].message, duration: 8000 });
-    const newData = { ...data, results: { ...data.results, ...results } };
-    setData(newData);
-    sessionStorage.setItem("qalami_results", JSON.stringify(newData));
-    setRegeneratingPlatform(null);
+    try {
+      const { results, errors } = await generateContent({
+        platforms,
+        tone: data.tone,
+        postType: data.postType,
+        userInput: data.userInput,
+        model: data.model,
+        length: data.length || "medium",
+        language: data.language || "ar",
+      });
+      if (errors.length) toast.error(t("regen_failed"), { description: errors[0].message, duration: 8000 });
+      const newData = { ...data, results: { ...data.results, ...results } };
+      setData(newData);
+      sessionStorage.setItem("qalami_results", JSON.stringify(newData));
+    } catch (err) {
+      toast.error(t("regen_failed"), { description: err?.message, duration: 8000 });
+    } finally {
+      setRegeneratingPlatform(null);
+    }
   };
 
   const handleRegenerate = async (platform) => {
@@ -53,14 +72,21 @@ export default function Results() {
 
 
   const handleSaveAll = async () => {
-    if (!data) return;
+    if (!data || saving) return;
     setSaving(true);
-    for (const platform of data.platforms) {
-      const content = data.results[platform];
-      if (content) await SavedPost.create({ platform, tone: data.tone, post_type: data.postType, user_input: data.userInput, content });
+    try {
+      for (const platform of data.platforms) {
+        const content = data.results[platform];
+        if (content && !content.startsWith("⚠️")) {
+          await SavedPost.create({ platform, tone: data.tone, post_type: data.postType, user_input: data.userInput, content });
+        }
+      }
+      toast.success(t("saved_library"));
+    } catch (err) {
+      toast.error(err?.message || "تعذّر الحفظ");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    toast.success(t("saved_library"));
   };
 
   if (!data) return null;

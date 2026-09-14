@@ -51,9 +51,13 @@ export default function History() {
   };
 
   const handleDelete = async (id) => {
-    await SavedPost.delete(id);
-    setPosts((prev) => prev.filter((p) => p.id !== id));
-    toast.success(t("deleted"));
+    try {
+      await SavedPost.delete(id);
+      setPosts((prev) => prev.filter((p) => p.id !== id));
+      toast.success(t("deleted"));
+    } catch (err) {
+      toast.error(err?.message || "تعذّر الحذف");
+    }
   };
 
   const groups = groupByDate(posts, t);
