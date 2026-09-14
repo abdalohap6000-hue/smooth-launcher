@@ -88,7 +88,7 @@ export default function Home() {
       }
     }
 
-    sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, model }));
+    sessionStorage.setItem("qalami_results", JSON.stringify({ results, platforms: selectedPlatforms, tone: selectedTone, postType: selectedType, userInput, model, length, language }));
     navigate("/results");
   };
 
