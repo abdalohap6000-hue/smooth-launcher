@@ -74,6 +74,30 @@ export type Database = {
         }
         Relationships: []
       }
+      revenuecat_webhook_events: {
+        Row: {
+          app_user_id: string | null
+          event_key: string
+          event_type: string
+          processed_at: string
+          raw: Json | null
+        }
+        Insert: {
+          app_user_id?: string | null
+          event_key: string
+          event_type: string
+          processed_at?: string
+          raw?: Json | null
+        }
+        Update: {
+          app_user_id?: string | null
+          event_key?: string
+          event_type?: string
+          processed_at?: string
+          raw?: Json | null
+        }
+        Relationships: []
+      }
       saved_posts: {
         Row: {
           content: string
